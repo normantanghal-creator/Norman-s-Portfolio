@@ -315,6 +315,7 @@ function toggleStar(photo) {
     return;
   }
   if (photo.starred) soundStar();
+  else soundUnstar();
   renderList();
 }
 

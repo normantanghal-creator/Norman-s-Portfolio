@@ -150,3 +150,14 @@ function soundStar() {
     "sine",
   );
 }
+
+function soundUnstar() {
+  playTone(
+    [
+      { freq: 1760, at: 0, len: 0.06 },
+      { freq: 1319, at: 0.05, len: 0.07 },
+      { freq: 988, at: 0.1, len: 0.14 },
+    ],
+    "sine",
+  );
+}
