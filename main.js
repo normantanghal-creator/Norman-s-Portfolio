@@ -62,7 +62,50 @@ try {
   // Storage can be blocked. The page stays on the white background.
 }
 
+function paintFeatured() {
+  const grid = document.querySelector("#featured");
+  if (!grid || typeof loadLibrary !== "function") return;
+  const photos = loadLibrary()
+    .photos.filter((photo) => photo.starred && safeImage(photo.image))
+    .sort((a, b) => (a.starredAt || 0) - (b.starredAt || 0))
+    .slice(0, 4);
+  if (!photos.length) return;
+  grid.replaceChildren();
+  photos.forEach((photo) => {
+    const article = document.createElement("article");
+    article.className = "card";
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    const demo = document.createElement("div");
+    demo.className = "demo";
+    demo.setAttribute("role", "img");
+    demo.setAttribute("aria-label", photo.title || "Photograph");
+    const img = document.createElement("img");
+    img.src = safeImage(photo.image);
+    img.alt = "";
+    demo.appendChild(img);
+    frame.appendChild(demo);
+    const copy = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = photo.title || "Untitled";
+    const caption = document.createElement("p");
+    caption.textContent = photo.caption;
+    copy.append(title, caption);
+    article.append(frame, copy);
+    if (photo.category) {
+      const tags = document.createElement("div");
+      tags.className = "tags";
+      const tag = document.createElement("span");
+      tag.textContent = photo.category;
+      tags.appendChild(tag);
+      article.appendChild(tags);
+    }
+    grid.appendChild(article);
+  });
+}
+
 syncThemeButton();
+paintFeatured();
 paintDemos();
 
 if (themeButton) {

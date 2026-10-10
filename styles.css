@@ -501,6 +501,13 @@ html[data-theme="oled"] .btn-light {
   aspect-ratio: 3 / 2;
 }
 
+.card .frame .demo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .card h3 {
   margin: 0;
   font-family: var(--heading);
