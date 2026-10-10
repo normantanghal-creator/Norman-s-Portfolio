@@ -139,3 +139,14 @@ function soundDelete() {
     "triangle",
   );
 }
+
+function soundStar() {
+  playTone(
+    [
+      { freq: 988, at: 0, len: 0.07 },
+      { freq: 1319, at: 0.06, len: 0.08 },
+      { freq: 1760, at: 0.12, len: 0.16 },
+    ],
+    "sine",
+  );
+}
