@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="locked">
   <head>
     <meta charset="utf-8" />
+    <script src="gate.js"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; form-action 'self' mailto:" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Norman — Website 2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,16 +15,29 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <form class="gate" id="gate" autocomplete="off">
+      <p>404</p>
+      <h1>This page could not be found.</h1>
+      <input type="password" name="password" placeholder="Password" aria-label="Password" autocomplete="current-password" />
+    </form>
     <nav class="nav">
       <div class="nav-inner">
-        <a class="brand" href="index.html">norman</a>
+        <div class="brand-row">
+          <a class="brand" href="/">norman</a>
+          <time class="saipan" datetime="">00:00:00</time>
+        </div>
         <div class="nav-links">
           <button class="theme" type="button" aria-pressed="false" aria-label="Use a light background">
-            <span class="theme-icon" aria-hidden="true"></span>
+            <span class="theme-icon" aria-hidden="true">
+              <svg class="icon-light" width="18" height="18" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.6" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.4v1.6M8 13v1.6M1.4 8h1.6M13 8h1.6M3.3 3.3l1.1 1.1M11.6 11.6l1.1 1.1M3.3 12.7l1.1-1.1M11.6 4.4l1.1-1.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              <svg class="icon-dark" width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M9.6 2.2a5 5 0 1 0 4.2 7.4A4 4 0 0 1 9.6 2.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              <svg class="icon-oled" width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="2.2" y="3.2" width="11.6" height="9.6" rx="2" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+            </span>
           </button>
-          <a href="work.html">Work</a>
+          <a href="/work.html">Work</a>
+          <a href="#selected">Selected</a>
           <a href="#about">About</a>
-          <a href="#selected">Archive</a>
+          <a href="/gear.html">Gear</a>
           <details class="menu">
             <summary>
               Social
@@ -40,6 +55,7 @@
       </div>
     </nav>
 
+    <div class="stage-scroll">
     <div id="smooth">
     <main class="page">
       <section class="hero">
@@ -50,7 +66,7 @@
           </p>
           <div class="actions">
             <a class="btn-light" href="mailto:norman@demo.com">Get in touch</a>
-            <a class="btn-dark" href="work.html">View work</a>
+            <a class="btn-dark" href="/work.html">View work</a>
           </div>
         </div>
         <div class="stage" aria-hidden="true">
@@ -107,7 +123,25 @@
             <div class="tags"><span>Night</span><span>Series</span></div>
           </article>
         </div>
-        <a class="btn-light view-all" href="work.html">View all work</a>
+        <a class="btn-light view-all" href="/work.html">View all work</a>
+      </section>
+
+      <section class="block" id="services">
+        <h2>Services</h2>
+        <div class="service-row">
+          <article>
+            <h3>Demo</h3>
+            <p>A demo sentence about a service. Swap this when the real list is ready.</p>
+          </article>
+          <article>
+            <h3>Demo</h3>
+            <p>A demo sentence about a service. Swap this when the real list is ready.</p>
+          </article>
+          <article>
+            <h3>Demo</h3>
+            <p>A demo sentence about a service. Swap this when the real list is ready.</p>
+          </article>
+        </div>
       </section>
 
       <section class="about-track" id="about">
@@ -144,16 +178,56 @@
       </section>
 
       <section class="book" id="book">
-        <h2>Set a meeting or send a message</h2>
-        <p>Book a call to pick a time. Or leave a name and a note, and it goes to his email.</p>
+        <h2>Set a meeting or send me a message</h2>
+        <p>Book a call and pick a time. Or leave your name and a note, and it comes straight to me.</p>
         <a class="btn-light book-call" id="book-call" href="https://cal.com/" target="_blank" rel="noopener noreferrer">Book a call</a>
         <form class="book-form" id="book-form">
           <input type="text" name="name" placeholder="Name" required autocomplete="name" />
           <textarea name="message" placeholder="Message" required></textarea>
           <button class="btn-light" type="submit">Send message</button>
         </form>
+        <a
+          class="maker-credit"
+          href="https://thegreaterengine.xyz/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Website made by The Greater Engine — opens in a new tab"
+          title="Visit The Greater Engine"
+        >
+          <span>Made by</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36" aria-hidden="true" focusable="false">
+            <g>
+              <circle cx="18" cy="17.73" r="2.45" />
+              <circle cx="13.6" cy="15.19" r="2.24" />
+              <circle cx="9.31" cy="12.71" r="2.03" />
+              <circle cx="5.12" cy="10.29" r="1.83" />
+              <circle cx="18" cy="22.81" r="2.24" />
+              <circle cx="18" cy="27.77" r="2.03" />
+              <circle cx="18" cy="32.6" r="1.83" />
+              <circle cx="22.4" cy="15.19" r="2.24" />
+              <circle cx="26.69" cy="12.71" r="2.03" />
+              <circle cx="30.88" cy="10.29" r="1.83" />
+              <circle cx="5.28" cy="15.28" r="1.62" />
+              <circle cx="5.44" cy="20.15" r="1.41" />
+              <circle cx="5.59" cy="24.89" r="1.2" />
+              <circle cx="9.63" cy="27.4" r="1.41" />
+              <circle cx="13.76" cy="29.97" r="1.62" />
+              <circle cx="22.24" cy="29.97" r="1.62" />
+              <circle cx="26.37" cy="27.4" r="1.41" />
+              <circle cx="30.41" cy="24.89" r="1.2" />
+              <circle cx="30.56" cy="20.15" r="1.41" />
+              <circle cx="30.72" cy="15.28" r="1.62" />
+              <circle cx="26.48" cy="7.94" r="1.62" />
+              <circle cx="22.19" cy="5.64" r="1.41" />
+              <circle cx="18" cy="3.4" r="1.2" />
+              <circle cx="13.81" cy="5.64" r="1.41" />
+              <circle cx="9.52" cy="7.94" r="1.62" />
+            </g>
+          </svg>
+        </a>
       </section>
     </main>
+    </div>
     </div>
     <script src="main.js"></script>
   </body>

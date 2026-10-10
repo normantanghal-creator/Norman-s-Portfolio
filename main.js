@@ -29,19 +29,37 @@ function paintDemos() {
   });
 }
 
+const themeOrder = ["light", "dark", "oled"];
+
+function currentTheme() {
+  const theme = document.documentElement.dataset.theme;
+  return theme === "dark" || theme === "oled" ? theme : "light";
+}
+
+function applyTheme(theme) {
+  if (theme === "light") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem("norman-theme", theme);
+  } catch {
+    // The switch still works on this page.
+  }
+  syncThemeButton();
+}
+
 function syncThemeButton() {
   if (!themeButton) return;
-  const light = document.documentElement.dataset.theme === "light";
-  themeButton.setAttribute("aria-pressed", light ? "true" : "false");
-  themeButton.setAttribute("aria-label", light ? "Use a dark background" : "Use a light background");
+  const theme = currentTheme();
+  const next = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
+  themeButton.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+  themeButton.setAttribute("aria-label", `Use ${next} mode`);
 }
 
 try {
-  if (localStorage.getItem("norman-theme") === "light") {
-    document.documentElement.dataset.theme = "light";
-  }
+  const saved = localStorage.getItem("norman-theme");
+  if (saved === "dark" || saved === "oled") applyTheme(saved);
 } catch {
-  // Storage can be blocked. The page stays on the dark background.
+  // Storage can be blocked. The page stays on the white background.
 }
 
 syncThemeButton();
@@ -49,15 +67,9 @@ paintDemos();
 
 if (themeButton) {
   themeButton.addEventListener("click", () => {
-    const light = document.documentElement.dataset.theme === "light";
-    if (light) delete document.documentElement.dataset.theme;
-    else document.documentElement.dataset.theme = "light";
-    try {
-      localStorage.setItem("norman-theme", light ? "dark" : "light");
-    } catch {
-      // The switch still works for this page.
-    }
-    syncThemeButton();
+    const theme = currentTheme();
+    const next = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
+    applyTheme(next);
     paintDemos();
     themeButton.classList.remove("is-flipping");
     void themeButton.offsetWidth;
@@ -92,9 +104,33 @@ function layoutTop(element) {
   return y;
 }
 
+function paintNav(scrollY) {
+  const links = [...document.querySelectorAll(".nav-links a[href^='#']")];
+  if (!links.length) return;
+  const sections = links
+    .map((link) => {
+      const id = link.getAttribute("href").slice(1);
+      const element = document.getElementById(id);
+      return element ? { id, top: layoutTop(element) } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.top - b.top);
+  let currentId = "";
+  sections.forEach((section) => {
+    if (section.top - 120 <= scrollY) currentId = section.id;
+  });
+  links.forEach((link) => {
+    const id = link.getAttribute("href").slice(1);
+    if (id && id === currentId) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
+  });
+}
+
 function maxScroll() {
   if (!root) return 0;
-  return Math.max(0, root.scrollHeight - window.innerHeight);
+  const frame = document.querySelector(".stage-scroll");
+  const height = frame ? frame.clientHeight : window.innerHeight;
+  return Math.max(0, root.scrollHeight - height);
 }
 
 const takeover = document.querySelector(".takeover");
@@ -205,6 +241,10 @@ if (root) {
   });
 
   window.addEventListener("keydown", (event) => {
+    const tag = event.target && event.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+    const viewer = document.querySelector("#viewer");
+    if (viewer && !viewer.hidden) return;
     const step = event.key === "PageDown" || event.key === "PageUp" ? window.innerHeight * 0.85 : 80;
     if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ") {
       event.preventDefault();
@@ -249,12 +289,14 @@ if (root) {
     root.style.transform = `translate3d(0, ${-current}px, 0)`;
     paintAbout(current);
     paintTakeover(current);
+    paintNav(current);
     requestAnimationFrame(frame);
   }
 
   root.style.transform = `translate3d(0, ${-current}px, 0)`;
   paintAbout(current);
   paintTakeover(current);
+  paintNav(current);
   requestAnimationFrame(frame);
 }
 
@@ -286,6 +328,65 @@ document.querySelectorAll(".menu").forEach((menu) => {
       if (finePointer.matches) event.preventDefault();
     });
   }
+});
+
+const saipan = document.querySelector(".saipan");
+if (saipan) {
+  const glyphs = "0123456789ABCDEF";
+  let clockText = "";
+  let hoveringClock = false;
+  let glitchTimer = 0;
+  const tickClock = () => {
+    clockText = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Pacific/Saipan",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }).format(new Date());
+    saipan.dateTime = clockText;
+    if (!hoveringClock) saipan.textContent = clockText;
+  };
+  const glitch = () => {
+    const chars = clockText.split("");
+    const spot = Math.floor(Math.random() * chars.length);
+    if (chars[spot] !== ":" && chars[spot] !== " ") {
+      chars[spot] = glyphs[Math.floor(Math.random() * glyphs.length)];
+    }
+    saipan.textContent = chars.join("");
+  };
+  saipan.addEventListener("pointerenter", () => {
+    hoveringClock = true;
+    window.clearInterval(glitchTimer);
+    glitchTimer = window.setInterval(glitch, 90);
+  });
+  saipan.addEventListener("pointerleave", () => {
+    hoveringClock = false;
+    window.clearInterval(glitchTimer);
+    saipan.textContent = clockText;
+  });
+  tickClock();
+  window.setInterval(tickClock, 1000);
+}
+
+document.querySelectorAll(".brand").forEach((brand) => {
+  let timer = 0;
+  let armed = false;
+  brand.addEventListener("pointerdown", () => {
+    armed = false;
+    timer = window.setTimeout(() => {
+      armed = true;
+      window.location.href = "login.html";
+    }, 2000);
+  });
+  const cancel = () => window.clearTimeout(timer);
+  brand.addEventListener("pointerup", cancel);
+  brand.addEventListener("pointerleave", cancel);
+  brand.addEventListener("pointercancel", cancel);
+  brand.addEventListener("click", (event) => {
+    if (!armed) return;
+    event.preventDefault();
+  });
 });
 
 if (bookForm) {
