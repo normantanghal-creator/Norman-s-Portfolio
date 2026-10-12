@@ -100,6 +100,7 @@ function fillSelect(select) {
 
 let view = "";
 let starPopId = "";
+let scrollPopId = "";
 
 function clearEdit() {
   selected = "";
@@ -226,6 +227,7 @@ function renderList() {
   if (view === "review") {
     renderReview();
     starPopId = "";
+    scrollPopId = "";
     return;
   }
   library.replaceChildren();
@@ -254,10 +256,16 @@ function renderList() {
     open.append(thumb, copy);
     open.addEventListener("click", () => selectPhoto(photo.id));
     row.appendChild(open);
-    if (view === "library") row.appendChild(starButton(photo));
+    if (view === "library") {
+      const marks = document.createElement("div");
+      marks.className = "photo-marks";
+      marks.append(starButton(photo), scrollButton(photo));
+      row.appendChild(marks);
+    }
     library.appendChild(row);
   });
   starPopId = "";
+  scrollPopId = "";
 }
 
 function starButton(photo) {
@@ -278,6 +286,65 @@ function starButton(photo) {
   star.appendChild(svg);
   star.addEventListener("click", () => toggleStar(photo));
   return star;
+}
+
+function scrollButton(photo) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = photo.scroll ? "scroll-mark is-on" : "scroll-mark";
+  if (photo.id === scrollPopId) button.classList.add("is-pop");
+  button.setAttribute("aria-pressed", photo.scroll ? "true" : "false");
+  button.setAttribute("aria-label", photo.scroll ? "Remove from the Selected scroll" : "Add to the Selected scroll");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", "22");
+  svg.setAttribute("height", "22");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M5 6.5h14v11H5z M8 4.5h11v2");
+  svg.appendChild(path);
+  button.appendChild(svg);
+  button.addEventListener("click", () => toggleScroll(photo));
+  return button;
+}
+
+function toggleScroll(photo) {
+  const snapshot = data.photos.map((item) => ({
+    id: item.id,
+    scroll: item.scroll === true,
+    scrollAt: item.scrollAt || 0,
+  }));
+  if (photo.scroll) {
+    photo.scroll = false;
+    photo.scrollAt = 0;
+    scrollPopId = "";
+  } else {
+    const picked = data.photos
+      .filter((item) => item.scroll && item.id !== photo.id)
+      .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0));
+    while (picked.length >= 3) {
+      const oldest = picked.shift();
+      oldest.scroll = false;
+      oldest.scrollAt = 0;
+    }
+    photo.scroll = true;
+    photo.scrollAt = Date.now();
+    scrollPopId = photo.id;
+  }
+  if (!persist()) {
+    snapshot.forEach((saved) => {
+      const item = data.photos.find((entry) => entry.id === saved.id);
+      if (!item) return;
+      item.scroll = saved.scroll;
+      item.scrollAt = saved.scrollAt;
+    });
+    scrollPopId = "";
+    soundBad();
+    return;
+  }
+  if (photo.scroll) soundStar();
+  else soundUnstar();
+  renderList();
 }
 
 function toggleStar(photo) {

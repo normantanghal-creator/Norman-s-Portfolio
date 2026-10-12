@@ -62,13 +62,18 @@ try {
   // Storage can be blocked. The page stays on the white background.
 }
 
-function paintFeatured() {
-  const grid = document.querySelector("#featured");
-  if (!grid || typeof loadLibrary !== "function") return;
-  const photos = loadLibrary()
+function starredPhotos(limit) {
+  if (typeof loadLibrary !== "function") return [];
+  return loadLibrary()
     .photos.filter((photo) => photo.starred && safeImage(photo.image))
     .sort((a, b) => (a.starredAt || 0) - (b.starredAt || 0))
-    .slice(0, 4);
+    .slice(0, limit);
+}
+
+function paintFeatured() {
+  const grid = document.querySelector("#featured");
+  if (!grid) return;
+  const photos = starredPhotos(4);
   if (!photos.length) return;
   grid.replaceChildren();
   photos.forEach((photo) => {
@@ -104,8 +109,44 @@ function paintFeatured() {
   });
 }
 
+function scrollPhotos() {
+  if (typeof loadLibrary !== "function") return [];
+  return loadLibrary()
+    .photos.filter((photo) => photo.scroll && safeImage(photo.image))
+    .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0))
+    .slice(0, 3);
+}
+
+function paintTakeoverPhotos() {
+  const windowEl = document.querySelector(".takeover-window");
+  if (!windowEl) return;
+  const photos = scrollPhotos();
+  if (!photos.length) return;
+  windowEl.replaceChildren();
+  photos.forEach((photo) => {
+    const article = document.createElement("article");
+    article.className = "take-card";
+    const copy = document.createElement("div");
+    copy.className = "take-copy";
+    const title = document.createElement("h3");
+    title.textContent = photo.title || "Untitled";
+    const caption = document.createElement("p");
+    caption.textContent = photo.caption;
+    copy.append(title, caption);
+    const frame = document.createElement("div");
+    frame.className = "take-photo";
+    const img = document.createElement("img");
+    img.src = safeImage(photo.image);
+    img.alt = "";
+    frame.appendChild(img);
+    article.append(copy, frame);
+    windowEl.appendChild(article);
+  });
+}
+
 syncThemeButton();
 paintFeatured();
+paintTakeoverPhotos();
 paintDemos();
 
 if (themeButton) {
@@ -178,7 +219,6 @@ function maxScroll() {
 
 const takeover = document.querySelector(".takeover");
 const takeoverPin = document.querySelector(".takeover-pin");
-const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
 
 function holdMotion(progress) {
   const hold = 0.46;
@@ -188,6 +228,7 @@ function holdMotion(progress) {
 }
 
 function paintTakeover(scrollY) {
+  const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
   const stick = 64;
   const top = layoutTop(takeover);

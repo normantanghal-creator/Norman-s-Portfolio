@@ -462,13 +462,21 @@ html[data-theme="oled"] .btn-light {
   padding: 48px 0 16px;
 }
 
-.block h2 {
+.block h2,
+.about h2,
+.takeover-title {
   margin: 0 0 24px;
   font-family: var(--heading);
   font-weight: 600;
   font-size: 32px;
   line-height: 36px;
   letter-spacing: -1.2px;
+  color: var(--text);
+}
+
+.about h2,
+.takeover-title {
+  margin: 0;
 }
 
 .work-grid {
@@ -570,11 +578,6 @@ html[data-theme="oled"] .btn-light {
 
 .about h2 {
   margin: 0;
-  font-size: 24px;
-  line-height: 28px;
-  letter-spacing: -0.6px;
-  font-weight: 600;
-  color: var(--text);
 }
 
 .about-copy {
@@ -608,6 +611,9 @@ html[data-theme="oled"] .btn-light {
   left: 0;
   right: 0;
   height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .takeover-window {
@@ -618,9 +624,14 @@ html[data-theme="oled"] .btn-light {
 
 .take-card {
   position: absolute;
-  top: 40px;
-  left: 0;
+  top: 0;
   right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
   background: transparent;
   transform: translate3d(0, 110%, 0);
 }
@@ -671,12 +682,21 @@ html[data-theme="oled"] .btn-light {
 }
 
 .take-card h3 {
-  margin: 22px 0 0;
+  margin: 0;
   font-family: var(--heading);
   font-weight: 600;
-  font-size: 32px;
-  line-height: 36px;
-  letter-spacing: -1.1px;
+  font-size: 24px;
+  line-height: 28px;
+  letter-spacing: -0.6px;
+}
+
+.take-photo img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .take-card p {
@@ -1155,9 +1175,22 @@ html[data-theme="dark"] .viewer {
     height: 42vh;
   }
 
+  .take-card {
+    grid-template-columns: 1fr;
+    align-content: center;
+  }
+
   .take-card h3 {
-    font-size: 26px;
-    line-height: 30px;
+    font-size: 24px;
+    line-height: 28px;
+  }
+
+  .block h2,
+  .about h2,
+  .takeover-title {
+    font-size: 32px;
+    line-height: 36px;
+    letter-spacing: -1.2px;
   }
 
   .book h2 {
@@ -2181,7 +2214,13 @@ html[data-theme="oled"] .overview-site a {
   text-align: left;
 }
 
-.star {
+.photo-marks {
+  display: flex;
+  align-items: center;
+}
+
+.star,
+.scroll-mark {
   position: relative;
   flex: 0 0 40px;
   width: 40px;
@@ -2292,16 +2331,57 @@ html[data-theme="oled"] .overview-site a {
   }
 }
 
+.scroll-mark svg {
+  display: block;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.scroll-mark path {
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.scroll-mark.is-on {
+  color: #1c1c1c;
+}
+
+.scroll-mark.is-on path {
+  fill: #1c1c1c;
+  stroke: #1c1c1c;
+}
+
+.scroll-mark.is-pop svg {
+  animation: star-pop 640ms cubic-bezier(0.2, 1.45, 0.32, 1);
+}
+
 html[data-theme="dark"] .star,
-html[data-theme="oled"] .star {
+html[data-theme="oled"] .star,
+html[data-theme="dark"] .scroll-mark,
+html[data-theme="oled"] .scroll-mark {
   color: #c8c8c8;
+}
+
+html[data-theme="dark"] .scroll-mark.is-on,
+html[data-theme="oled"] .scroll-mark.is-on {
+  color: #f4f4f4;
+}
+
+html[data-theme="dark"] .scroll-mark.is-on path,
+html[data-theme="oled"] .scroll-mark.is-on path {
+  fill: #f4f4f4;
+  stroke: #f4f4f4;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .star.is-pop svg,
   .star.is-pop path,
   .star.is-pop::before,
-  .star.is-pop::after {
+  .star.is-pop::after,
+  .scroll-mark.is-pop svg {
     animation: none;
   }
 }

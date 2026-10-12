@@ -40,6 +40,8 @@ function cleanPhoto(photo, index) {
     later: photo.later === true,
     starred: photo.starred === true,
     starredAt: photo.starred === true && Number.isFinite(Number(photo.starredAt)) ? Number(photo.starredAt) : 0,
+    scroll: photo.scroll === true,
+    scrollAt: photo.scroll === true && Number.isFinite(Number(photo.scrollAt)) ? Number(photo.scrollAt) : 0,
   };
 }
 
