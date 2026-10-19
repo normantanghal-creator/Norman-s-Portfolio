@@ -216,7 +216,7 @@ function layoutTop(element) {
 }
 
 function paintNav(scrollY) {
-  const links = [...document.querySelectorAll(".nav-links a[href^='#']")];
+  const links = [...document.querySelectorAll(".nav-links a[href^='#']:not(.contact-btn)")];
   if (!links.length) return;
   const sections = links
     .map((link) => {
@@ -309,12 +309,14 @@ function paintAbout(scrollY) {
 if (root) {
   let target = 0;
   let current = 0;
+  let heading = null;
 
   function clamp(value) {
     return Math.min(maxScroll(), Math.max(0, value));
   }
 
   function goTo(element, offset) {
+    heading = { element, offset };
     target = clamp(layoutTop(element) - offset);
   }
 
@@ -322,6 +324,7 @@ if (root) {
     "wheel",
     (event) => {
       event.preventDefault();
+      heading = null;
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
       target = clamp(target + event.deltaY * unit);
     },
@@ -341,6 +344,7 @@ if (root) {
     (event) => {
       if (lastTouch === null) return;
       const y = event.touches[0].clientY;
+      heading = null;
       target = clamp(target + (lastTouch - y));
       lastTouch = y;
       event.preventDefault();
@@ -357,6 +361,7 @@ if (root) {
     const viewer = document.querySelector("#viewer");
     if (viewer && !viewer.hidden) return;
     const step = event.key === "PageDown" || event.key === "PageUp" ? window.innerHeight * 0.85 : 80;
+    if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " ", "Home", "End"].includes(event.key)) heading = null;
     if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ") {
       event.preventDefault();
       target = clamp(target + step);
@@ -389,12 +394,13 @@ if (root) {
   if (location.hash.length > 1) {
     const element = document.getElementById(location.hash.slice(1));
     if (element) {
-      target = clamp(layoutTop(element) - 24);
-      current = target;
+      goTo(element, 24);
+      if (element.id !== "book") current = target;
     }
   }
 
   function frame() {
+    if (heading) target = clamp(layoutTop(heading.element) - heading.offset);
     current += (target - current) * 0.045;
     if (Math.abs(target - current) < 0.4) current = target;
     root.style.transform = `translate3d(0, ${-current}px, 0)`;
