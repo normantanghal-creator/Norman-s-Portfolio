@@ -11,7 +11,7 @@ export async function GET() {
     return Response.json({ library: raw ? cleanLibrary(JSON.parse(raw)) : null }, { headers: noStore });
   } catch (error) {
     console.error("Library read failed:", error.message);
-    return Response.json({ error: "Could not read the library" }, { status: 502, headers: noStore });
+    return Response.json({ error: "Could not read the library", detail: [error.message, error.cause && error.cause.code].filter(Boolean).join(" ") }, { status: 502, headers: noStore });
   }
 }
 

@@ -37,9 +37,10 @@ function objectUrl(key) {
 
 export async function readObject(key) {
   const res = await client().fetch(objectUrl(key));
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`R2 read ${key} failed with ${res.status}`);
-  return res.text();
+  const body = await res.text();
+  if (res.status === 404 && !body.includes("NoSuchBucket")) return null;
+  if (!res.ok) throw new Error(`R2 read ${key} failed with ${res.status} ${(body.match(/<Code>([^<]+)<\/Code>/) || [])[1] || ""}`.trim());
+  return body;
 }
 
 export async function writeObject(key, body, type) {
