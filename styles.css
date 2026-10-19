@@ -3936,6 +3936,38 @@ html[data-theme="oled"] .desk .modal button {
   border-color: #9a9a9a;
 }
 
+body:has(.gear-soon) .stage-scroll {
+  display: flex;
+  flex-direction: column;
+}
+
+body:has(.gear-soon) #smooth {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  min-height: 100%;
+  padding-top: 0;
+}
+
+.gear-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.gear-soon p {
+  margin: 0;
+  font-family: var(--heading);
+  font-weight: 600;
+  font-size: 56px;
+  line-height: 60px;
+  letter-spacing: -2.2px;
+}
+
 @media (max-width: 980px) {
   html:has(.stage-scroll),
   html:has(.stage-scroll) body {
@@ -4034,5 +4066,15 @@ html[data-theme="oled"] .desk .modal button {
 
   .nav-links a[aria-current="page"]:hover {
     color: inherit;
+  }
+
+  body:has(.gear-soon) .stage-scroll {
+    min-height: calc(100vh - var(--nav-space, 108px));
+  }
+
+  .gear-soon p {
+    font-size: 40px;
+    line-height: 44px;
+    letter-spacing: -1.6px;
   }
 }
