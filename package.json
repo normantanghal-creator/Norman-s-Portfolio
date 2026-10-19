@@ -2,6 +2,9 @@
   "name": "norman-portfolio",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "node dev.mjs"
+  },
   "dependencies": {
     "aws4fetch": "^1.0.20",
     "jose": "^6.2.12"

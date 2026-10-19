@@ -67,10 +67,22 @@ function photoFileOk(file) {
 }
 
 let cloud = false;
+let cloudDown = false;
 let cloudTimer = 0;
 let cloudQueue = Promise.resolve();
 
+function warnCloudDown() {
+  document.querySelector("#modal-title").textContent = "Storage is offline";
+  document.querySelector("#modal-copy").textContent = "Photo storage can't be reached right now, so nothing here will save. Reload the page in a few minutes.";
+  modal.classList.add("is-on");
+  soundBad();
+}
+
 function persist() {
+  if (cloudDown) {
+    warnCloudDown();
+    return false;
+  }
   if (cloud) {
     window.clearTimeout(cloudTimer);
     cloudTimer = window.setTimeout(pushLibrary, 400);
@@ -133,19 +145,24 @@ async function connectCloud() {
     userPhoto.referrerPolicy = "no-referrer";
     userPhoto.hidden = false;
   }
-  if (!session.storage) return;
   let remote = null;
   try {
     const res = await fetch("/api/library", { cache: "no-store" });
-    if (!res.ok) return;
+    if (!session.storage || !res.ok) throw new Error("Storage is offline");
     const body = await res.json();
     remote = body.library ? cleanLibrary(body.library) : structuredClone(seedLibrary);
   } catch {
+    cloudDown = true;
+    warnCloudDown();
     return;
   }
   cloud = true;
+  refreshStorage();
   data.categories = remote.categories;
   data.photos = remote.photos;
+  data.about = remote.about;
+  data.services = remote.services;
+  if (view === "site") renderSite();
   clearEdit();
   refreshCategorySelects();
   renderCategories();
@@ -168,7 +185,16 @@ function cloudPhoto(file, onProgress, track) {
         }
         let link;
         try {
-          const res = await fetch("/api/upload", { method: "POST" });
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ size: blob.size }),
+          });
+          if (res.status === 507) {
+            const full = await res.json();
+            paintStorage(full.used, full.limit);
+            throw new Error("Storage full");
+          }
           if (!res.ok) throw new Error("Upload failed");
           link = await res.json();
         } catch (error) {
@@ -183,8 +209,10 @@ function cloudPhoto(file, onProgress, track) {
           if (onProgress && event.lengthComputable) onProgress(event.loaded / event.total);
         });
         xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve(link.image);
-          else reject(new Error("Upload failed"));
+          if (xhr.status >= 200 && xhr.status < 300) {
+            paintStorage(link.used, link.limit);
+            resolve(link.image);
+          } else reject(new Error("Upload failed"));
         });
         xhr.addEventListener("error", () => reject(new Error("Upload failed")));
         xhr.addEventListener("abort", () => reject(new Error("Upload stopped")));
@@ -210,7 +238,37 @@ function readPhoto(file) {
 
 function dropCloudPhoto(image) {
   if (!cloud || !/^https:/.test(image)) return;
-  fetch(`/api/photo?image=${encodeURIComponent(image)}`, { method: "DELETE" }).catch(() => {});
+  fetch(`/api/photo?image=${encodeURIComponent(image)}`, { method: "DELETE" })
+    .then(refreshStorage)
+    .catch(() => {});
+}
+
+const storageBox = document.querySelector("#storage");
+
+function formatGb(bytes) {
+  const gb = bytes / 1e9;
+  if (gb < 0.1) return `${Math.round(bytes / 1e6)} MB`;
+  return `${gb.toFixed(2)} GB`;
+}
+
+function paintStorage(used, limit) {
+  if (!storageBox || !Number.isFinite(used) || !limit) return;
+  const part = Math.min(1, used / limit);
+  storageBox.hidden = false;
+  storageBox.classList.toggle("is-full", part >= 0.9);
+  document.querySelector("#storage-text").textContent = `${formatGb(used)} of ${formatGb(limit)}`;
+  document.querySelector("#storage-fill").style.width = `${Math.max(part * 100, used ? 1 : 0)}%`;
+}
+
+async function refreshStorage() {
+  try {
+    const res = await fetch("/api/storage", { cache: "no-store" });
+    if (!res.ok) return;
+    const body = await res.json();
+    paintStorage(body.used, body.limit);
+  } catch {
+    // The bar keeps its last reading.
+  }
 }
 const library = document.querySelector("#library");
 const overview = document.querySelector("#overview");
@@ -219,6 +277,7 @@ const restore = document.querySelector("#restore");
 const search = document.querySelector("#search");
 const upload = document.querySelector("#upload");
 const categoriesForm = document.querySelector("#categories");
+const siteForm = document.querySelector("#site");
 const categoryList = document.querySelector("#category-list");
 const edit = document.querySelector("#edit");
 const editFields = document.querySelector("#edit-fields");
@@ -263,6 +322,8 @@ function showPanel(name) {
   review.hidden = name !== "review";
   upload.hidden = name !== "upload";
   categoriesForm.hidden = name !== "categories";
+  siteForm.hidden = name !== "site";
+  if (name === "site") renderSite();
   document.querySelector("#cat-add").hidden = name !== "categories";
   if (name !== "categories") document.querySelector("#cat-prompt").classList.remove("is-on");
   edit.hidden = !showPhotos;
@@ -273,6 +334,7 @@ function showPanel(name) {
     else if (name === "later") title.textContent = "Later";
     else if (name === "upload") title.textContent = "Upload";
     else if (name === "categories") title.textContent = "Categories";
+    else if (name === "site") title.textContent = "About & services";
     else title.textContent = "Photographs";
   }
   renderList();
@@ -359,6 +421,7 @@ function renderList() {
     else if (view === "later") note.textContent = laterTotal ? "Set aside for later. Nothing here is deleted." : "Nothing set aside";
     else if (view === "upload") note.textContent = "Add photographs here. Titles can be filled in as they upload.";
     else if (view === "categories") note.textContent = "These groups show up on the work page.";
+    else if (view === "site") note.textContent = "The About me text and the services on the home page.";
     else note.textContent = `${matches.length} photographs`;
   }
   if (setup) {
@@ -748,7 +811,9 @@ function finishUpload(item, image) {
   item.seconds = 0;
   renderList();
   paintQueue();
-  if (!queue.some((entry) => entry.status === "uploading")) soundOk();
+  if (queue.some((entry) => entry.status === "uploading")) return;
+  soundOk();
+  if (cloud) refreshStorage();
 }
 
 function startCloudUpload(item) {
@@ -782,6 +847,13 @@ function startUpload(item) {
   item.status = "uploading";
   item.loaded = 0;
   item.message = "";
+  if (cloudDown) {
+    item.status = "failed";
+    item.message = "Storage is offline";
+    warnCloudDown();
+    paintQueue();
+    return;
+  }
   if (cloud) {
     startCloudUpload(item);
     return;
@@ -977,7 +1049,7 @@ function paintQueue() {
     if (!failed) row.classList.remove("is-shake");
     if (!retry.classList.contains("is-spin")) retry.hidden = item.status !== "failed";
     if (item.status === "rejected") meta.textContent = item.message;
-    else if (item.status === "failed") meta.textContent = "Upload failed";
+    else if (item.status === "failed") meta.textContent = item.message || "Upload failed";
     else if (item.status === "done") meta.textContent = `${formatMb(item.file.size)} MB · Uploaded`;
     else meta.textContent = `${formatMb(item.loaded)} of ${formatMb(item.file.size)} MB · ${item.seconds}s left`;
     const width = item.status === "rejected" ? 0 : item.file.size ? Math.min(100, (item.loaded / item.file.size) * 100) : 0;
@@ -1328,6 +1400,97 @@ function deleteCategory(name) {
   renderList();
 }
 
+const siteServices = document.querySelector("#site-services");
+const siteAdd = document.querySelector("#site-add");
+const siteLayouts = { 3: "one row of 3", 4: "2 on top, 2 below", 5: "3 on top, 2 below", 6: "two rows of 3", 7: "4 on top, 3 below", 8: "two rows of 4" };
+let siteDraft = [];
+
+function renderSite() {
+  siteForm.about.value = data.about;
+  siteDraft = data.services.map((service) => ({ ...service }));
+  paintSiteServices();
+}
+
+function paintSiteServices() {
+  siteServices.replaceChildren();
+  siteDraft.forEach((service, index) => {
+    const card = document.createElement("div");
+    card.className = "site-service";
+    const top = document.createElement("div");
+    top.className = "site-service-top";
+    const number = document.createElement("span");
+    number.textContent = String(index + 1);
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "cat-delete";
+    remove.textContent = "Remove";
+    remove.disabled = siteDraft.length <= SERVICES_MIN;
+    remove.addEventListener("click", () => {
+      if (siteDraft.length <= SERVICES_MIN) return;
+      siteDraft.splice(index, 1);
+      paintSiteServices();
+      soundDelete();
+    });
+    top.append(number, remove);
+    const title = document.createElement("input");
+    title.type = "text";
+    title.maxLength = 60;
+    title.placeholder = "Service name";
+    title.value = service.title;
+    title.setAttribute("aria-label", `Service ${index + 1} name`);
+    title.addEventListener("input", () => {
+      service.title = title.value;
+      title.classList.remove("is-bad");
+    });
+    const text = document.createElement("textarea");
+    text.rows = 2;
+    text.maxLength = 280;
+    text.placeholder = "One or two sentences";
+    text.value = service.text;
+    text.setAttribute("aria-label", `Service ${index + 1} description`);
+    text.addEventListener("input", () => {
+      service.text = text.value;
+    });
+    card.append(top, title, text);
+    siteServices.appendChild(card);
+  });
+  document.querySelector("#site-count").textContent = `${siteDraft.length} of ${SERVICES_MAX} · ${siteLayouts[siteDraft.length]}`;
+  siteAdd.hidden = siteDraft.length >= SERVICES_MAX;
+}
+
+siteAdd.addEventListener("click", () => {
+  if (siteDraft.length >= SERVICES_MAX) return;
+  siteDraft.push({ title: "", text: "" });
+  paintSiteServices();
+  siteServices.querySelector(".site-service:last-child input").focus();
+});
+
+siteForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const about = safeText(siteForm.about.value, 1200);
+  const services = siteDraft.map((service) => ({ title: safeText(service.title, 60), text: safeText(service.text, 280) }));
+  siteForm.about.classList.toggle("is-bad", !about);
+  siteServices.querySelectorAll(".site-service input").forEach((input, index) => {
+    input.classList.toggle("is-bad", !services[index].title);
+  });
+  if (!about || services.some((service) => !service.title)) {
+    soundBad();
+    return;
+  }
+  const previous = { about: data.about, services: data.services };
+  data.about = about;
+  data.services = services;
+  if (!persist()) {
+    data.about = previous.about;
+    data.services = previous.services;
+    return;
+  }
+  renderSite();
+  done("Saved", "About me and the services are updated on the home page.");
+});
+
+siteForm.about.addEventListener("input", () => siteForm.about.classList.remove("is-bad"));
+
 function renderCategories() {
   categoryList.replaceChildren();
   data.categories.forEach((name) => {
@@ -1473,4 +1636,4 @@ renderCategories();
 attachCalendar(document.querySelector("#review-date"));
 attachCalendar(edit.date);
 showPanel("overview");
-connectCloud();
+connectCloud().finally(() => document.body.classList.remove("is-syncing"));

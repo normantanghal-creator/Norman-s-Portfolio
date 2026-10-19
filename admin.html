@@ -13,7 +13,7 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="plain desk">
+  <body class="plain desk is-syncing">
     <div class="desk-app">
       <aside class="rail">
         <label class="rail-search">
@@ -45,6 +45,10 @@
             Categories
             <em id="cat-count"></em>
           </button>
+          <button type="button" data-panel="site">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3.5h10M3 6.5h10M3 9.5h6M3 12.5h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            About &amp; services
+          </button>
         </nav>
         <p class="rail-label">Review</p>
         <nav>
@@ -65,6 +69,10 @@
             <path d="M4 10 10 4M5.5 4H10v4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </a>
+        <div class="rail-storage" id="storage" hidden>
+          <p><span>Storage</span><small id="storage-text"></small></p>
+          <div class="rail-storage-bar"><span id="storage-fill"></span></div>
+        </div>
         <div class="rail-user">
           <img class="rail-avatar" id="user-photo" alt="" />
           <strong>Norman</strong>
@@ -178,6 +186,19 @@
         <div id="categories" hidden>
           <ul id="category-list"></ul>
         </div>
+        <form class="site-edit" id="site" hidden>
+          <label class="site-field">
+            <span>About me</span>
+            <textarea name="about" rows="7" maxlength="1200" placeholder="A few sentences about Norman"></textarea>
+          </label>
+          <div class="site-head">
+            <h2>Services</h2>
+            <small id="site-count"></small>
+          </div>
+          <div class="site-services" id="site-services"></div>
+          <button class="site-add" id="site-add" type="button">Add a service</button>
+          <button class="enter site-save" type="submit">Save</button>
+        </form>
       </section>
       <form class="desk-detail" id="edit">
         <h2>Edit</h2>

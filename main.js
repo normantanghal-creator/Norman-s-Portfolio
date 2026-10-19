@@ -144,13 +144,12 @@ function paintTakeoverPhotos(library) {
 
 syncThemeButton();
 if (typeof loadLibrary === "function" && document.querySelector("#featured")) {
-  const local = loadLibrary();
-  paintFeatured(local);
-  paintTakeoverPhotos(local);
-  fetchLibrary().then((library) => {
-    if (!library) return;
+  fetchLibrary().then((remote) => {
+    const library = remote || loadLibrary();
     paintFeatured(library);
     paintTakeoverPhotos(library);
+    paintServices(library.services);
+    paintAboutText(library.about);
     paintDemos();
   });
 }
@@ -171,10 +170,11 @@ if (themeButton) {
 const aboutCopy = document.querySelector(".about-copy");
 const aboutWords = [];
 
-if (aboutCopy) {
-  const words = aboutCopy.textContent.trim().split(/\s+/);
+function paintAboutText(text) {
+  if (!aboutCopy) return;
+  aboutWords.length = 0;
   aboutCopy.textContent = "";
-  for (const word of words) {
+  for (const word of text.trim().split(/\s+/)) {
     const span = document.createElement("span");
     span.textContent = word;
     aboutCopy.appendChild(span);
@@ -182,6 +182,26 @@ if (aboutCopy) {
     aboutWords.push(span);
   }
 }
+
+function paintServices(services) {
+  const serviceRows = { 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3], 7: [4, 3], 8: [4, 4] };
+  const row = document.querySelector(".service-row");
+  if (!row || !serviceRows[services.length]) return;
+  const spans = serviceRows[services.length].flatMap((count) => Array(count).fill(12 / count));
+  row.replaceChildren();
+  services.forEach((service, index) => {
+    const article = document.createElement("article");
+    article.style.setProperty("--span", String(spans[index]));
+    const title = document.createElement("h3");
+    title.textContent = service.title;
+    const text = document.createElement("p");
+    text.textContent = service.text;
+    article.append(title, text);
+    row.appendChild(article);
+  });
+}
+
+if (aboutCopy) paintAboutText(aboutCopy.textContent);
 
 const root = document.querySelector("#smooth");
 

@@ -135,12 +135,8 @@ if (covers && catBox && density) {
     });
   }
 
-  renderCats();
-  renderCovers();
   fetchLibrary().then((remote) => {
-    if (!remote) return;
-    library = remote;
-    if (category !== "All" && !library.categories.includes(category)) category = "All";
+    if (remote) library = remote;
     renderCats();
     renderCovers();
   });

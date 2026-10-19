@@ -10,7 +10,25 @@ const seedLibrary = {
     { id: "sunday-market", title: "Sunday Market", caption: "A demo sentence about fruit and early hands.", category: "Street", date: "2024-02-04", image: "" },
     { id: "after-dark", title: "After Dark", caption: "A demo sentence about lamps and wet pavement.", category: "Night", date: "2023-09-30", image: "" },
   ],
+  about:
+    "Norman photographs weather, rooms, and the quiet stretch after the shops close. These are demo sentences about light, waiting, and people who stay still for a moment. Swap this block for the real introduction when it is ready. The note to keep is simple: leave the pictures honest, and leave room for the person in front of the lens.",
+  services: [
+    { title: "Demo", text: "A demo sentence about a service. Swap this when the real list is ready." },
+    { title: "Demo", text: "A demo sentence about a service. Swap this when the real list is ready." },
+    { title: "Demo", text: "A demo sentence about a service. Swap this when the real list is ready." },
+  ],
 };
+
+const SERVICES_MIN = 3;
+const SERVICES_MAX = 8;
+
+function cleanServices(list) {
+  const services = (Array.isArray(list) ? list : [])
+    .slice(0, SERVICES_MAX)
+    .map((item) => ({ title: safeText(item && item.title, 60), text: safeText(item && item.text, 280) }))
+    .filter((item) => item.title);
+  return services.length >= SERVICES_MIN ? services : structuredClone(seedLibrary.services);
+}
 
 function safeText(value, max) {
   return String(value == null ? "" : value)
@@ -87,6 +105,8 @@ function cleanLibrary(data) {
   return {
     categories: categories.length ? categories : structuredClone(seedLibrary.categories),
     photos,
+    about: safeText(data.about, 1200) || seedLibrary.about,
+    services: cleanServices(data.services),
   };
 }
 

@@ -42,5 +42,11 @@ export function cleanLibrary(input) {
       scrollAt: stamp(photo.scroll === true, photo.scrollAt),
     });
   });
-  return { categories, photos };
+  const services = (Array.isArray(input.services) ? input.services : [])
+    .slice(0, 8)
+    .map((item) => ({ title: text(item && item.title, 60), text: text(item && item.text, 280) }))
+    .filter((item) => item.title);
+  const library = { categories, photos, about: text(input.about, 1200) };
+  if (services.length >= 3) library.services = services;
+  return library;
 }
