@@ -45,6 +45,8 @@ if (covers && catBox && density) {
     covers.classList.add("is-refit");
     window.setTimeout(() => {
       covers.replaceChildren();
+      covers.classList.remove("is-loading");
+      if (count) count.classList.remove("is-loading");
       covers.style.setProperty("--cols", String(cols));
       list.forEach((photo) => {
         const article = document.createElement("article");

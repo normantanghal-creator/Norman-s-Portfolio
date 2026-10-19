@@ -1017,6 +1017,10 @@ html[data-theme="dark"] .viewer {
   margin-top: 16px;
 }
 
+.is-loading {
+  visibility: hidden;
+}
+
 .covers {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -150,6 +150,7 @@ if (typeof loadLibrary === "function" && document.querySelector("#featured")) {
     paintTakeoverPhotos(library);
     paintServices(library.services);
     paintAboutText(library.about);
+    document.querySelectorAll(".is-loading").forEach((element) => element.classList.remove("is-loading"));
     paintDemos();
   });
 }
