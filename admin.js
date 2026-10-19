@@ -104,7 +104,7 @@ function pushLibrary(keepalive) {
         body,
         keepalive: keepalive === true,
       });
-      if (res.ok) return;
+      if (res.ok) return true;
     } catch {
       // Falls through to the warning below.
     }
@@ -112,7 +112,9 @@ function pushLibrary(keepalive) {
     document.querySelector("#modal-copy").textContent = "The last change did not reach the cloud. Check the connection, then change it again.";
     modal.classList.add("is-on");
     soundBad();
+    return false;
   });
+  return cloudQueue;
 }
 
 window.addEventListener("pagehide", () => {
@@ -523,13 +525,9 @@ function toggleScroll(photo) {
     photo.scrollAt = 0;
     scrollPopId = "";
   } else {
-    const picked = data.photos
-      .filter((item) => item.scroll && item.id !== photo.id)
-      .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0));
-    while (picked.length >= 3) {
-      const oldest = picked.shift();
-      oldest.scroll = false;
-      oldest.scrollAt = 0;
+    if (data.photos.filter((item) => item.scroll).length >= 3) {
+      soundBad();
+      return;
     }
     photo.scroll = true;
     photo.scrollAt = Date.now();
@@ -1563,7 +1561,12 @@ function removeSelected() {
     data.photos.splice(index, 0, removed);
     return;
   }
-  dropCloudPhoto(removed.image);
+  if (cloud) {
+    window.clearTimeout(cloudTimer);
+    pushLibrary().then((saved) => {
+      if (saved) dropCloudPhoto(removed.image);
+    });
+  }
   clearEdit();
   renderList();
   soundDelete();
