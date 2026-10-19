@@ -216,6 +216,25 @@ function layoutTop(element) {
   return y;
 }
 
+const phoneScroll = window.matchMedia("(max-width: 980px)");
+
+function onPhone() {
+  return phoneScroll.matches;
+}
+
+function navHeight() {
+  const nav = document.querySelector(".nav");
+  return nav ? nav.offsetHeight : 0;
+}
+
+function syncNavSpace() {
+  if (!onPhone()) return;
+  const space = `${navHeight()}px`;
+  if (document.documentElement.style.getPropertyValue("--nav-space") !== space) {
+    document.documentElement.style.setProperty("--nav-space", space);
+  }
+}
+
 function paintNav(scrollY) {
   const links = [...document.querySelectorAll(".nav-links a[href^='#']:not(.contact-btn)")];
   if (!links.length) return;
@@ -228,8 +247,9 @@ function paintNav(scrollY) {
     .filter(Boolean)
     .sort((a, b) => a.top - b.top);
   let currentId = "";
+  const lead = onPhone() ? navHeight() + 16 : 120;
   sections.forEach((section) => {
-    if (section.top - 120 <= scrollY) currentId = section.id;
+    if (section.top - lead <= scrollY) currentId = section.id;
   });
   links.forEach((link) => {
     const id = link.getAttribute("href").slice(1);
@@ -248,8 +268,7 @@ function maxScroll() {
 const takeover = document.querySelector(".takeover");
 const takeoverPin = document.querySelector(".takeover-pin");
 
-function holdMotion(progress) {
-  const hold = 0.46;
+function holdMotion(progress, hold = 0.46) {
   if (progress <= hold) return 0;
   const t = (progress - hold) / (1 - hold);
   return 1 - (1 - t) ** 3;
@@ -258,7 +277,12 @@ function holdMotion(progress) {
 function paintTakeover(scrollY) {
   const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
-  const stick = 64;
+  const phone = onPhone();
+  if (phone) {
+    const step = Math.round(window.innerHeight * 0.62);
+    takeover.style.height = `${takeoverPin.offsetHeight + Math.max(1, takeCards.length - 1) * step}px`;
+  } else if (takeover.style.height) takeover.style.height = "";
+  const stick = phone ? navHeight() : 64;
   const top = layoutTop(takeover);
   const local = scrollY - (top - stick);
   const travel = Math.max(1, takeover.offsetHeight - takeoverPin.offsetHeight);
@@ -271,14 +295,15 @@ function paintTakeover(scrollY) {
     card.style.zIndex = String(index + 1);
     const progress =
       index === 0 ? 1 : Math.min(1, Math.max(0, (local - (index - 1) * segment) / segment));
-    const motion = index === 0 ? 1 : holdMotion(progress);
+    const motion = index === 0 ? 1 : holdMotion(progress, phone ? 0 : 0.46);
     const offset = index === 0 ? 0 : (1 - motion) * (takeoverPin.offsetHeight + 8);
     card.style.transform = `translate3d(0, ${offset}px, 0)`;
 
+    const next = index < last ? Math.min(1, Math.max(0, (local - index * segment) / segment)) : 0;
+    const nextMotion = index < last ? holdMotion(next, phone ? 0 : 0.46) : 0;
     let textOpacity = index === 0 ? 1 : motion < 0.4 ? 0 : Math.min(1, (motion - 0.4) / 0.45);
-    if (index < last) {
-      const next = Math.min(1, Math.max(0, (local - index * segment) / segment));
-      const nextMotion = holdMotion(next);
+    if (phone) textOpacity = motion >= 0.98 && nextMotion < 0.08 ? 1 : 0;
+    else if (index < last) {
       const fadeOut = nextMotion === 0 ? 1 : Math.max(0, 1 - nextMotion / 0.35);
       textOpacity *= fadeOut;
     }
@@ -292,7 +317,7 @@ function paintAbout(scrollY) {
   const aboutTrack = document.querySelector(".about-track");
   const aboutPin = document.querySelector(".about-pin");
   if (!aboutTrack || !aboutPin || aboutWords.length === 0) return;
-  const stick = 64;
+  const stick = onPhone() ? navHeight() : 64;
   const top = layoutTop(aboutTrack);
   const local = scrollY - (top - stick);
   const travel = Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight);
@@ -317,6 +342,12 @@ if (root) {
   }
 
   function goTo(element, offset) {
+    if (onPhone()) {
+      syncNavSpace();
+      heading = { element, offset: navHeight() + 12 };
+      window.scrollTo(0, Math.max(0, layoutTop(element) - heading.offset));
+      return;
+    }
     heading = { element, offset };
     target = clamp(layoutTop(element) - offset);
   }
@@ -324,6 +355,10 @@ if (root) {
   window.addEventListener(
     "wheel",
     (event) => {
+      if (onPhone()) {
+        heading = null;
+        return;
+      }
       event.preventDefault();
       heading = null;
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
@@ -336,6 +371,7 @@ if (root) {
   window.addEventListener(
     "touchstart",
     (event) => {
+      if (onPhone()) heading = null;
       lastTouch = event.touches[0].clientY;
     },
     { passive: true },
@@ -343,6 +379,7 @@ if (root) {
   window.addEventListener(
     "touchmove",
     (event) => {
+      if (onPhone()) return;
       if (lastTouch === null) return;
       const y = event.touches[0].clientY;
       heading = null;
@@ -357,6 +394,10 @@ if (root) {
   });
 
   window.addEventListener("keydown", (event) => {
+    if (onPhone()) {
+      heading = null;
+      return;
+    }
     const tag = event.target && event.target.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
     const viewer = document.querySelector("#viewer");
@@ -402,6 +443,20 @@ if (root) {
   }
 
   function frame() {
+    if (onPhone()) {
+      syncNavSpace();
+      if (heading) {
+        const top = Math.max(0, layoutTop(heading.element) - heading.offset);
+        if (Math.abs(window.scrollY - top) > 1) window.scrollTo(0, top);
+      }
+      root.style.transform = "none";
+      const y = window.scrollY;
+      paintAbout(y);
+      paintTakeover(y);
+      paintNav(y);
+      requestAnimationFrame(frame);
+      return;
+    }
     if (heading) target = clamp(layoutTop(heading.element) - heading.offset);
     current += (target - current) * 0.045;
     if (Math.abs(target - current) < 0.4) current = target;
@@ -412,7 +467,10 @@ if (root) {
     requestAnimationFrame(frame);
   }
 
-  root.style.transform = `translate3d(0, ${-current}px, 0)`;
+  if (onPhone()) {
+    syncNavSpace();
+    root.style.transform = "none";
+  } else root.style.transform = `translate3d(0, ${-current}px, 0)`;
   paintAbout(current);
   paintTakeover(current);
   paintNav(current);

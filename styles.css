@@ -3935,3 +3935,104 @@ html[data-theme="oled"] .desk .queue-cat-list button,
 html[data-theme="oled"] .desk .modal button {
   border-color: #9a9a9a;
 }
+
+@media (max-width: 980px) {
+  html:has(.stage-scroll),
+  html:has(.stage-scroll) body {
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body:has(.stage-scroll) {
+    padding-top: var(--nav-space, 108px);
+  }
+
+  .nav {
+    background: var(--bg);
+  }
+
+  .stage-scroll {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    padding: 0 16px;
+  }
+
+  #smooth {
+    transform: none !important;
+  }
+
+  .about-pin,
+  .takeover-pin {
+    height: calc(100vh - var(--nav-space, 108px) - 16px);
+  }
+
+  .take-photo {
+    height: 32vh;
+  }
+
+  .nav-inner {
+    display: block;
+    position: relative;
+    padding-bottom: 10px;
+  }
+
+  .brand-row {
+    margin-bottom: 8px;
+  }
+
+  .nav-links .theme {
+    position: absolute;
+    top: 0;
+    right: 16px;
+  }
+
+  .nav-links {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    font-size: 13px;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a,
+  .nav-links .menu,
+  .nav-links .theme,
+  .nav-links .menu summary {
+    white-space: nowrap;
+  }
+
+  .nav-links .menu summary {
+    padding: 0;
+  }
+
+  .nav-links .contact-btn {
+    flex: none;
+    width: auto;
+    padding: 6px 10px;
+  }
+
+  .nav-links a[aria-current="page"] {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    border-radius: 0;
+    box-shadow: inset 0 -2px 0 currentColor;
+  }
+
+  .nav-links a[aria-current="page"]:hover {
+    color: inherit;
+  }
+}
