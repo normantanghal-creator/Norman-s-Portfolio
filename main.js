@@ -397,6 +397,7 @@ if (root) {
       goTo(element, 24);
       if (element.id !== "book") current = target;
     }
+    history.replaceState(null, "", location.pathname + location.search);
   }
 
   function frame() {
