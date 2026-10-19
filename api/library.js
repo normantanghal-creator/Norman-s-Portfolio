@@ -11,7 +11,7 @@ export async function GET() {
     return Response.json({ library: raw ? cleanLibrary(JSON.parse(raw)) : null }, { headers: noStore });
   } catch (error) {
     console.error("Library read failed:", error.message);
-    return Response.json({ error: "Could not read the library", detail: [error.message, error.cause && error.cause.code].filter(Boolean).join(" ") }, { status: 502, headers: noStore });
+    return Response.json({ error: "Could not read the library", detail: [error.message, error.cause && error.cause.code, accountShape()].filter(Boolean).join(" ") }, { status: 502, headers: noStore });
   }
 }
 
@@ -34,4 +34,10 @@ export async function PUT(request) {
     return Response.json({ error: "Could not save the library" }, { status: 502, headers: noStore });
   }
   return Response.json({ ok: true }, { headers: noStore });
+}
+
+function accountShape() {
+  const account = process.env.R2_ACCOUNT_ID || "";
+  if (/^[0-9a-f]{32}$/.test(account)) return "(account ID looks right)";
+  return `(account ID has ${account.length} characters; it should be 32 letters a-f and numbers)`;
 }
