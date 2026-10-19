@@ -66,10 +66,151 @@ function photoFileOk(file) {
   return imageTypes.has(file.type) || photoExt;
 }
 
+let cloud = false;
+let cloudTimer = 0;
+let cloudQueue = Promise.resolve();
+
 function persist() {
+  if (cloud) {
+    window.clearTimeout(cloudTimer);
+    cloudTimer = window.setTimeout(pushLibrary, 400);
+    return true;
+  }
   if (saveLibrary(data)) return true;
   soundBad();
   return false;
+}
+
+function pushLibrary(keepalive) {
+  cloudTimer = 0;
+  const body = JSON.stringify(data);
+  cloudQueue = cloudQueue.then(async () => {
+    try {
+      const res = await fetch("/api/library", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: keepalive === true,
+      });
+      if (res.ok) return;
+    } catch {
+      // Falls through to the warning below.
+    }
+    document.querySelector("#modal-title").textContent = "Not saved";
+    document.querySelector("#modal-copy").textContent = "The last change did not reach the cloud. Check the connection, then change it again.";
+    modal.classList.add("is-on");
+    soundBad();
+  });
+}
+
+window.addEventListener("pagehide", () => {
+  if (cloudTimer) {
+    window.clearTimeout(cloudTimer);
+    pushLibrary(true);
+  }
+});
+
+async function connectCloud() {
+  let session;
+  try {
+    const res = await fetch("/api/session", { cache: "no-store" });
+    if (!res.ok) return;
+    session = await res.json();
+  } catch {
+    return;
+  }
+  if (!session.user) {
+    if (session.google) {
+      sessionStorage.removeItem("norman-admin");
+      window.location.replace("login.html");
+    }
+    return;
+  }
+  const name = document.querySelector(".rail-user strong");
+  if (name && session.user.name) name.textContent = session.user.name;
+  if (userPhoto && session.user.picture) {
+    userPhoto.src = session.user.picture;
+    userPhoto.referrerPolicy = "no-referrer";
+    userPhoto.hidden = false;
+  }
+  if (!session.storage) return;
+  let remote = null;
+  try {
+    const res = await fetch("/api/library", { cache: "no-store" });
+    if (!res.ok) return;
+    const body = await res.json();
+    remote = body.library ? cleanLibrary(body.library) : structuredClone(seedLibrary);
+  } catch {
+    return;
+  }
+  cloud = true;
+  data.categories = remote.categories;
+  data.photos = remote.photos;
+  clearEdit();
+  refreshCategorySelects();
+  renderCategories();
+  renderList();
+}
+
+function cloudPhoto(file, onProgress, track) {
+  return new Promise((resolve, reject) => {
+    const src = URL.createObjectURL(file);
+    drawPhoto(src, 2400).then((canvas) => {
+      URL.revokeObjectURL(src);
+      if (!canvas) {
+        reject(new Error("Photographs only"));
+        return;
+      }
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          reject(new Error("Photographs only"));
+          return;
+        }
+        let link;
+        try {
+          const res = await fetch("/api/upload", { method: "POST" });
+          if (!res.ok) throw new Error("Upload failed");
+          link = await res.json();
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        const xhr = new XMLHttpRequest();
+        if (track) track.xhr = xhr;
+        xhr.open("PUT", link.url);
+        xhr.setRequestHeader("Content-Type", "image/jpeg");
+        xhr.upload.addEventListener("progress", (event) => {
+          if (onProgress && event.lengthComputable) onProgress(event.loaded / event.total);
+        });
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(link.image);
+          else reject(new Error("Upload failed"));
+        });
+        xhr.addEventListener("error", () => reject(new Error("Upload failed")));
+        xhr.addEventListener("abort", () => reject(new Error("Upload stopped")));
+        xhr.send(blob);
+      }, "image/jpeg", 0.88);
+    });
+  });
+}
+
+function readPhoto(file) {
+  if (cloud) return cloudPhoto(file);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("error", () => reject(new Error("Read failed")));
+    reader.addEventListener("load", () => {
+      const image = safeImage(String(reader.result));
+      if (image) resolve(image);
+      else reject(new Error("Photographs only"));
+    });
+    reader.readAsDataURL(file);
+  });
+}
+
+function dropCloudPhoto(image) {
+  if (!cloud || !/^https:/.test(image)) return;
+  fetch(`/api/photo?image=${encodeURIComponent(image)}`, { method: "DELETE" }).catch(() => {});
 }
 const library = document.querySelector("#library");
 const overview = document.querySelector("#overview");
@@ -509,17 +650,7 @@ function saveReview() {
     soundBad();
     return;
   }
-  const reader = new FileReader();
-  reader.addEventListener("error", () => soundBad());
-  reader.addEventListener("load", () => {
-    const image = safeImage(String(reader.result));
-    if (!image) {
-      soundBad();
-      return;
-    }
-    write(image);
-  });
-  reader.readAsDataURL(file);
+  readPhoto(file).then(write, () => soundBad());
 }
 
 const fileInput = document.querySelector("#file-input");
@@ -583,10 +714,78 @@ function addFiles(fileList) {
   paintQueue();
 }
 
+function finishUpload(item, image) {
+  const photoId = item.photoId || `photo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  item.photoId = photoId;
+  const existing = data.photos.find((photo) => photo.id === photoId);
+  const photo = existing || {
+    id: photoId,
+    title: safeText(item.title, 140) || "Untitled",
+    caption: safeText(item.caption, 600),
+    category: data.categories.includes(item.category) ? item.category : data.categories[0] || "",
+    date: /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : new Date().toISOString().slice(0, 10),
+    image: "",
+  };
+  const kept = existing ? existing.image : "";
+  photo.title = safeText(item.title, 140) || "Untitled";
+  photo.caption = safeText(item.caption, 600);
+  photo.category = data.categories.includes(item.category) ? item.category : photo.category;
+  photo.date = /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : photo.date;
+  photo.image = image;
+  if (!existing) data.photos.unshift(photo);
+  if (cloud) persist();
+  else if (!saveLibrary(data)) {
+    if (!existing) data.photos.shift();
+    else photo.image = kept;
+    item.status = "failed";
+    item.message = "Not enough room to save";
+    soundBad();
+    paintQueue();
+    return;
+  }
+  item.status = "done";
+  item.loaded = item.file.size;
+  item.seconds = 0;
+  renderList();
+  paintQueue();
+  if (!queue.some((entry) => entry.status === "uploading")) soundOk();
+}
+
+function startCloudUpload(item) {
+  const started = performance.now();
+  paintQueue();
+  cloudPhoto(
+    item.file,
+    (part) => {
+      if (item.status !== "uploading") return;
+      const gone = (performance.now() - started) / 1000;
+      item.loaded = item.file.size * part;
+      item.seconds = part > 0 ? Math.ceil((gone * (1 - part)) / part) : 0;
+      paintQueue();
+    },
+    item,
+  ).then(
+    (image) => {
+      if (item.status === "uploading") finishUpload(item, image);
+    },
+    (error) => {
+      if (item.status !== "uploading") return;
+      item.status = "failed";
+      item.message = error.message;
+      soundBad();
+      paintQueue();
+    },
+  );
+}
+
 function startUpload(item) {
   item.status = "uploading";
   item.loaded = 0;
   item.message = "";
+  if (cloud) {
+    startCloudUpload(item);
+    return;
+  }
   const started = performance.now();
   const duration = Math.min(2800, Math.max(800, item.file.size / 12000));
   const step = (now) => {
@@ -608,18 +807,6 @@ function startUpload(item) {
       paintQueue();
     });
     reader.addEventListener("load", async () => {
-      const photoId = item.photoId || `photo-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      item.photoId = photoId;
-      const existing = data.photos.find((photo) => photo.id === photoId);
-      const photo = existing || {
-        id: photoId,
-        title: safeText(item.title, 140) || "Untitled",
-        caption: safeText(item.caption, 600),
-        category: data.categories.includes(item.category) ? item.category : data.categories[0] || "",
-        date: /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : new Date().toISOString().slice(0, 10),
-        image: "",
-      };
-      const kept = existing ? existing.image : "";
       const image = await shrinkPhoto(String(reader.result));
       if (!image) {
         item.status = "failed";
@@ -628,27 +815,7 @@ function startUpload(item) {
         paintQueue();
         return;
       }
-      photo.title = safeText(item.title, 140) || "Untitled";
-      photo.caption = safeText(item.caption, 600);
-      photo.category = data.categories.includes(item.category) ? item.category : photo.category;
-      photo.date = /^\d{4}-\d{2}-\d{2}$/.test(item.date) ? item.date : photo.date;
-      photo.image = image;
-      if (!existing) data.photos.unshift(photo);
-      if (!saveLibrary(data)) {
-        if (!existing) data.photos.shift();
-        else photo.image = kept;
-        item.status = "failed";
-        item.message = "Not enough room to save";
-        soundBad();
-        paintQueue();
-        return;
-      }
-      item.status = "done";
-      item.loaded = item.file.size;
-      item.seconds = 0;
-      renderList();
-      paintQueue();
-      if (!queue.some((entry) => entry.status === "uploading")) soundOk();
+      finishUpload(item, image);
     });
     reader.readAsDataURL(item.file);
   };
@@ -773,6 +940,8 @@ function paintQueue() {
         const dropRow = () => {
           if (!row.isConnected) return;
           if (item.frame) cancelAnimationFrame(item.frame);
+          if (item.status === "uploading") item.status = "removed";
+          if (item.xhr) item.xhr.abort();
           if (item.preview) URL.revokeObjectURL(item.preview);
           const index = queue.findIndex((entry) => entry.id === item.id);
           if (index >= 0) queue.splice(index, 1);
@@ -836,26 +1005,30 @@ document.addEventListener("click", () => {
   });
 });
 
-function shrinkPhoto(dataUrl) {
+function drawPhoto(src, max) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const max = 1600;
       const scale = Math.min(1, max / Math.max(img.width, img.height));
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, Math.round(img.width * scale));
       canvas.height = Math.max(1, Math.round(img.height * scale));
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        resolve("");
+        resolve(null);
         return;
       }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(safeImage(canvas.toDataURL("image/jpeg", 0.82)));
+      resolve(canvas);
     };
-    img.onerror = () => resolve("");
-    img.src = dataUrl;
+    img.onerror = () => resolve(null);
+    img.src = src;
   });
+}
+
+async function shrinkPhoto(dataUrl) {
+  const canvas = await drawPhoto(dataUrl, 1600);
+  return canvas ? safeImage(canvas.toDataURL("image/jpeg", 0.82)) : "";
 }
 
 const calMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -1197,17 +1370,7 @@ edit.addEventListener("submit", (event) => {
     soundBad();
     return;
   }
-  const reader = new FileReader();
-  reader.addEventListener("error", () => soundBad());
-  reader.addEventListener("load", () => {
-    const image = safeImage(String(reader.result));
-    if (!image) {
-      soundBad();
-      return;
-    }
-    write(image);
-  });
-  reader.readAsDataURL(file);
+  readPhoto(file).then(write, () => soundBad());
 });
 
 const confirm = document.querySelector("#confirm");
@@ -1237,6 +1400,7 @@ function removeSelected() {
     data.photos.splice(index, 0, removed);
     return;
   }
+  dropCloudPhoto(removed.image);
   clearEdit();
   renderList();
   soundDelete();
@@ -1309,3 +1473,4 @@ renderCategories();
 attachCalendar(document.querySelector("#review-date"));
 attachCalendar(edit.date);
 showPanel("overview");
+connectCloud();

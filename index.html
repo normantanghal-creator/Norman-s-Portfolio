@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="locked">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <script src="gate.js"></script>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; form-action 'self' mailto:" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; form-action 'self' mailto:" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Norman — Website 2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,11 +14,6 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <form class="gate" id="gate" autocomplete="off">
-      <p>404</p>
-      <h1>This page could not be found.</h1>
-      <input type="password" name="password" placeholder="Password" aria-label="Password" autocomplete="current-password" />
-    </form>
     <nav class="nav">
       <div class="nav-inner">
         <div class="brand-row">

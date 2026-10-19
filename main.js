@@ -62,18 +62,17 @@ try {
   // Storage can be blocked. The page stays on the white background.
 }
 
-function starredPhotos(limit) {
-  if (typeof loadLibrary !== "function") return [];
-  return loadLibrary()
-    .photos.filter((photo) => photo.starred && safeImage(photo.image))
+function starredPhotos(library, limit) {
+  return library.photos
+    .filter((photo) => photo.starred && safeImage(photo.image))
     .sort((a, b) => (a.starredAt || 0) - (b.starredAt || 0))
     .slice(0, limit);
 }
 
-function paintFeatured() {
+function paintFeatured(library) {
   const grid = document.querySelector("#featured");
   if (!grid) return;
-  const photos = starredPhotos(4);
+  const photos = starredPhotos(library, 4);
   if (!photos.length) return;
   grid.replaceChildren();
   photos.forEach((photo) => {
@@ -109,18 +108,17 @@ function paintFeatured() {
   });
 }
 
-function scrollPhotos() {
-  if (typeof loadLibrary !== "function") return [];
-  return loadLibrary()
-    .photos.filter((photo) => photo.scroll && safeImage(photo.image))
+function scrollPhotos(library) {
+  return library.photos
+    .filter((photo) => photo.scroll && safeImage(photo.image))
     .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0))
     .slice(0, 3);
 }
 
-function paintTakeoverPhotos() {
+function paintTakeoverPhotos(library) {
   const windowEl = document.querySelector(".takeover-window");
   if (!windowEl) return;
-  const photos = scrollPhotos();
+  const photos = scrollPhotos(library);
   if (!photos.length) return;
   windowEl.replaceChildren();
   photos.forEach((photo) => {
@@ -145,8 +143,17 @@ function paintTakeoverPhotos() {
 }
 
 syncThemeButton();
-paintFeatured();
-paintTakeoverPhotos();
+if (typeof loadLibrary === "function" && document.querySelector("#featured")) {
+  const local = loadLibrary();
+  paintFeatured(local);
+  paintTakeoverPhotos(local);
+  fetchLibrary().then((library) => {
+    if (!library) return;
+    paintFeatured(library);
+    paintTakeoverPhotos(library);
+    paintDemos();
+  });
+}
 paintDemos();
 
 if (themeButton) {

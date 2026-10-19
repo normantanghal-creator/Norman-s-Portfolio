@@ -22,6 +22,7 @@ function safeText(value, max) {
 function safeImage(value) {
   const image = String(value || "");
   if (!image || image.length > 7500000) return "";
+  if (/^https:\/\/[^\s"'<>\\]+$/i.test(image)) return image.length <= 2048 ? image : "";
   if (!/^data:image\/(jpeg|png|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(image)) return "";
   return image;
 }
@@ -49,30 +50,44 @@ function loadLibrary() {
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);
     if (!raw) return structuredClone(seedLibrary);
-    const data = JSON.parse(raw);
-    if (!data || !Array.isArray(data.photos) || !Array.isArray(data.categories)) {
-      return structuredClone(seedLibrary);
-    }
-    const seen = new Set();
-    const photos = [];
-    data.photos.forEach((photo, index) => {
-      const clean = cleanPhoto(photo, index);
-      if (!clean || seen.has(clean.id)) return;
-      seen.add(clean.id);
-      photos.push(clean);
-    });
-    const categories = [];
-    data.categories.forEach((name) => {
-      const clean = safeText(name, 80);
-      if (clean && !categories.includes(clean)) categories.push(clean);
-    });
-    return {
-      categories: categories.length ? categories : structuredClone(seedLibrary.categories),
-      photos,
-    };
+    return cleanLibrary(JSON.parse(raw));
   } catch {
     return structuredClone(seedLibrary);
   }
+}
+
+async function fetchLibrary() {
+  try {
+    const res = await fetch("/api/library", { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body.library ? cleanLibrary(body.library) : null;
+  } catch {
+    return null;
+  }
+}
+
+function cleanLibrary(data) {
+  if (!data || !Array.isArray(data.photos) || !Array.isArray(data.categories)) {
+    return structuredClone(seedLibrary);
+  }
+  const seen = new Set();
+  const photos = [];
+  data.photos.forEach((photo, index) => {
+    const clean = cleanPhoto(photo, index);
+    if (!clean || seen.has(clean.id)) return;
+    seen.add(clean.id);
+    photos.push(clean);
+  });
+  const categories = [];
+  data.categories.forEach((name) => {
+    const clean = safeText(name, 80);
+    if (clean && !categories.includes(clean)) categories.push(clean);
+  });
+  return {
+    categories: categories.length ? categories : structuredClone(seedLibrary.categories),
+    photos,
+  };
 }
 
 function saveLibrary(data) {

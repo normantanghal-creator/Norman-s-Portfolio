@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; form-action 'self' mailto:" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://accounts.google.com/gsi/; form-action 'self' mailto:" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Norman — Sign in</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,6 +30,7 @@
           </svg>
           <span>Log in with Google</span>
         </button>
+        <div class="google-slot" id="google-slot" hidden></div>
         <p class="login-note" id="note"></p>
       </form>
     </main>

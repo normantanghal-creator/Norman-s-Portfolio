@@ -4,7 +4,7 @@ const density = document.querySelector("#density");
 const count = document.querySelector("#photo-count");
 
 if (covers && catBox && density) {
-  const library = loadLibrary();
+  let library = loadLibrary();
   const viewer = document.querySelector("#viewer");
   const viewerPhoto = document.querySelector("#viewer-photo");
   const viewerTitle = document.querySelector("#viewer-title");
@@ -137,4 +137,11 @@ if (covers && catBox && density) {
 
   renderCats();
   renderCovers();
+  fetchLibrary().then((remote) => {
+    if (!remote) return;
+    library = remote;
+    if (category !== "All" && !library.categories.includes(category)) category = "All";
+    renderCats();
+    renderCovers();
+  });
 }

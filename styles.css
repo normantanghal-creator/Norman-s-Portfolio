@@ -1505,6 +1505,23 @@ html:has(body.plain) {
   flex: none;
 }
 
+.google-slot {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.google-slot[hidden] {
+  display: none;
+}
+
+.login.is-google input,
+.login.is-google .enter,
+.login.is-google .bypass,
+.login.is-google .google {
+  display: none;
+}
+
 .login.is-good {
   background: #b6f3c8;
   outline: 3px solid #0b7a32;
@@ -1572,66 +1589,6 @@ html[data-theme="dark"] .login.is-bad {
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
-}
-
-.gate {
-  display: none;
-}
-
-html.locked .nav,
-html.locked .stage-scroll,
-html.locked .viewer {
-  display: none !important;
-}
-
-html.locked .gate {
-  display: flex;
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin: 0;
-  padding: 24px;
-  background: var(--bg);
-  color: var(--text);
-  text-align: center;
-}
-
-.gate p {
-  margin: 0;
-  font-family: var(--heading);
-  font-size: 14px;
-  letter-spacing: 0.08em;
-}
-
-.gate h1 {
-  margin: 0;
-  max-width: 16ch;
-  font-family: var(--heading);
-  font-size: 32px;
-  line-height: 36px;
-  letter-spacing: -0.04em;
-  font-weight: 600;
-}
-
-.gate input {
-  width: min(280px, 100%);
-  margin-top: 8px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: transparent;
-  color: var(--text);
-  appearance: none;
-  padding: 14px 16px;
-  font: inherit;
-  text-align: center;
-}
-
-.gate.is-bad {
-  animation: login-shake 420ms ease;
 }
 
 .desk {
