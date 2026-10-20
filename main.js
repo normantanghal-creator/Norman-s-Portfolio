@@ -277,7 +277,7 @@ function holdMotion(progress, hold = 0.46) {
 function stackRange() {
   if (!takeover || !takeoverPin) return null;
   const cards = takeover.querySelectorAll(".take-card").length;
-  if (!cards || onPhone()) return null;
+  if (!cards || cards < 2 || onPhone()) return null;
   if (takeover.style.height) takeover.style.height = "";
   const stick = onPhone() ? navHeight() : 64;
   const top = layoutTop(takeover);
@@ -289,8 +289,9 @@ function stackRange() {
 function paintTakeover(scrollY) {
   const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
-  if (onPhone()) {
+  if (onPhone() || takeCards.length < 2) {
     if (takeover.style.height) takeover.style.height = "";
+    takeover.classList.add("is-still");
     takeoverPin.style.transform = "";
     takeCards.forEach((card) => {
       card.style.transform = "";
@@ -300,6 +301,7 @@ function paintTakeover(scrollY) {
     });
     return;
   }
+  takeover.classList.remove("is-still");
   const phone = onPhone();
   const range = stackRange();
   const stick = phone ? navHeight() : 64;

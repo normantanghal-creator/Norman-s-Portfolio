@@ -644,6 +644,33 @@ html[data-theme="oled"] .btn-light {
   transform: none;
 }
 
+.takeover.is-still {
+  height: auto;
+}
+
+.takeover.is-still .takeover-pin {
+  position: static;
+  height: auto;
+  transform: none !important;
+}
+
+.takeover.is-still .takeover-window {
+  height: auto;
+  overflow: visible;
+}
+
+.takeover.is-still .take-card,
+.takeover.is-still .take-card:first-child {
+  position: relative;
+  inset: auto;
+  transform: none !important;
+}
+
+.takeover.is-still .take-card h3,
+.takeover.is-still .take-card p {
+  opacity: 1 !important;
+}
+
 .take-photo {
   position: relative;
   height: min(58vh, 540px);
