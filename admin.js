@@ -182,42 +182,34 @@ async function connectCloud() {
   renderList();
 }
 
+const uploadTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
 function cloudPhoto(file, onProgress, track) {
+  const type = file.type === "image/jpg" ? "image/jpeg" : file.type;
   return new Promise((resolve, reject) => {
-    const src = URL.createObjectURL(file);
-    drawPhoto(src, 2400).then((canvas) => {
-      URL.revokeObjectURL(src);
-      if (!canvas) {
-        reject(new Error("Photographs only"));
-        return;
-      }
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          reject(new Error("Photographs only"));
-          return;
+    if (!uploadTypes.has(type)) {
+      reject(new Error("Photographs only"));
+      return;
+    }
+    fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ size: file.size, type }),
+    })
+      .then(async (res) => {
+        if (res.status === 507) {
+          const full = await res.json();
+          paintStorage(full.used, full.limit);
+          throw new Error("Storage full");
         }
-        let link;
-        try {
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ size: blob.size }),
-          });
-          if (res.status === 507) {
-            const full = await res.json();
-            paintStorage(full.used, full.limit);
-            throw new Error("Storage full");
-          }
-          if (!res.ok) throw new Error("Upload failed");
-          link = await res.json();
-        } catch (error) {
-          reject(error);
-          return;
-        }
+        if (!res.ok) throw new Error("Upload failed");
+        return res.json();
+      })
+      .then((link) => {
         const xhr = new XMLHttpRequest();
         if (track) track.xhr = xhr;
         xhr.open("PUT", link.url);
-        xhr.setRequestHeader("Content-Type", "image/jpeg");
+        xhr.setRequestHeader("Content-Type", type);
         xhr.upload.addEventListener("progress", (event) => {
           if (onProgress && event.lengthComputable) onProgress(event.loaded / event.total);
         });
@@ -229,9 +221,9 @@ function cloudPhoto(file, onProgress, track) {
         });
         xhr.addEventListener("error", () => reject(new Error("Upload failed")));
         xhr.addEventListener("abort", () => reject(new Error("Upload stopped")));
-        xhr.send(blob);
-      }, "image/jpeg", 0.88);
-    });
+        xhr.send(file);
+      })
+      .catch((error) => reject(error));
   });
 }
 

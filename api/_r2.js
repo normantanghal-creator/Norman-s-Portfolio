@@ -22,7 +22,7 @@ export function keyFromPublicUrl(url) {
   const value = String(url || "");
   if (!value.startsWith(prefix)) return "";
   const key = value.slice(env().publicBase.length + 1);
-  return /^photos\/[a-z0-9-]+\.jpg$/.test(key) ? key : "";
+  return /^photos\/[a-z0-9-]+\.(jpg|png|webp|gif)$/.test(key) ? key : "";
 }
 
 function client() {
