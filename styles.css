@@ -348,20 +348,24 @@ details.menu > div::before {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 32px;
+  justify-content: center;
   height: calc(100vh - 56px);
   min-height: 640px;
   padding-right: 0;
 }
 
 .hero-copy {
-  width: 46%;
-  flex: 0 0 46%;
+  width: min(720px, 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
+  text-align: center;
+}
+
+.hero .actions {
+  justify-content: center;
 }
 
 h1 {
@@ -1898,9 +1902,9 @@ html[data-theme="oled"] .rail-suggest {
 .rail-storage {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 8px 4px;
-  color: #71717a;
+  gap: 8px;
+  padding: 12px 8px 4px;
+  color: #3f3f46;
   font-size: 12px;
 }
 
@@ -1910,19 +1914,36 @@ html[data-theme="oled"] .rail-suggest {
 
 .rail-storage p {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px;
   margin: 0;
+}
+
+.storage-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.storage-key i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffd60a;
 }
 
 .rail-storage small {
   font-size: inherit;
   font-variant-numeric: tabular-nums;
+  color: #71717a;
 }
 
 .rail-storage-bar {
-  height: 6px;
+  height: 12px;
   border-radius: 999px;
-  background: #e4e4e7;
+  background: #e8e8ed;
   overflow: hidden;
 }
 
@@ -1931,12 +1952,18 @@ html[data-theme="oled"] .rail-suggest {
   width: 0;
   height: 100%;
   border-radius: inherit;
-  background: #1c1c1c;
+  background: #ffd60a;
   transition: width 400ms ease, background-color 200ms ease;
 }
 
+.rail-storage.is-full .storage-key i,
 .rail-storage.is-full .rail-storage-bar span {
   background: #e10600;
+}
+
+html[data-theme="dark"] .rail-storage,
+html[data-theme="oled"] .rail-storage {
+  color: #f4f4f4;
 }
 
 html[data-theme="dark"] .rail-storage-bar,
@@ -1944,12 +1971,9 @@ html[data-theme="oled"] .rail-storage-bar {
   background: #3a3a3a;
 }
 
-html[data-theme="dark"] .rail-storage-bar span,
-html[data-theme="oled"] .rail-storage-bar span {
-  background: #f4f4f4;
-}
-
+html[data-theme="dark"] .rail-storage.is-full .storage-key i,
 html[data-theme="dark"] .rail-storage.is-full .rail-storage-bar span,
+html[data-theme="oled"] .rail-storage.is-full .storage-key i,
 html[data-theme="oled"] .rail-storage.is-full .rail-storage-bar span {
   background: #ff4d4d;
 }
@@ -2145,6 +2169,10 @@ html[data-theme="dark"] .desk-side nav button.is-on {
 #site[hidden],
 .desk-detail[hidden] {
   display: none !important;
+}
+
+.desk.is-locked {
+  visibility: hidden;
 }
 
 .desk.is-syncing .desk-list,
@@ -3979,6 +4007,7 @@ body:has(.gear-soon) #smooth {
     height: auto;
     overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior-y: none;
   }
 
   body:has(.stage-scroll) {
@@ -4005,13 +4034,45 @@ body:has(.gear-soon) #smooth {
     transform: none !important;
   }
 
+  .about-track,
+  .takeover {
+    height: auto;
+  }
+
   .about-pin,
   .takeover-pin {
-    height: calc(100vh - var(--nav-space, 108px) - 16px);
+    position: static;
+    height: auto;
+    transform: none !important;
+  }
+
+  .about-copy,
+  .about-copy span {
+    color: var(--about-on);
+  }
+
+  .takeover-window {
+    height: auto;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .take-card,
+  .take-card:first-child {
+    position: relative;
+    inset: auto;
+    transform: none !important;
+  }
+
+  .take-card h3,
+  .take-card p {
+    opacity: 1 !important;
   }
 
   .take-photo {
-    height: 32vh;
+    height: 42vh;
   }
 
   .nav-inner {
@@ -4081,5 +4142,43 @@ body:has(.gear-soon) #smooth {
     font-size: 40px;
     line-height: 44px;
     letter-spacing: -1.6px;
+  }
+}
+
+@media (max-width: 700px) {
+  body:has(.stage-scroll) {
+    padding-top: 0;
+  }
+
+  .nav {
+    position: relative;
+  }
+
+  .saipan {
+    display: none;
+  }
+
+  .brand-row,
+  .nav-links {
+    justify-content: center;
+  }
+
+  .nav-links .theme {
+    position: static;
+  }
+
+  .hero h1 {
+    width: 100%;
+    text-align: center;
+  }
+
+  .hero .lede,
+  .hero .btn-light {
+    display: none;
+  }
+
+  .hero .actions {
+    width: 100%;
+    justify-content: center;
   }
 }

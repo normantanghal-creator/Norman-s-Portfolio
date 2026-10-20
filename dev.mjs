@@ -24,6 +24,8 @@ const types = {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
+  if (url.pathname === "/website-2") url.pathname = "/";
+  else if (url.pathname.startsWith("/website-2/")) url.pathname = url.pathname.slice("/website-2".length);
   const api = url.pathname.match(/^\/api\/([a-z]+)$/);
   if (api) {
     let handler;

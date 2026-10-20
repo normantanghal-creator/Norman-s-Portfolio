@@ -1,5 +1,16 @@
-if (sessionStorage.getItem("norman-admin") !== "ok") {
-  window.location.replace("login.html");
+if (sessionStorage.getItem("norman-admin") === "ok") document.body.classList.remove("is-locked");
+else {
+  fetch("/api/session", { cache: "no-store" })
+    .then(async (res) => {
+      const session = res.ok ? await res.json() : {};
+      if (session.google && !session.user) {
+        window.location.replace("login.html");
+        return;
+      }
+      sessionStorage.setItem("norman-admin", "ok");
+      document.body.classList.remove("is-locked");
+    })
+    .catch(() => document.body.classList.remove("is-locked"));
 }
 
 const themeButton = document.querySelector("#theme");
@@ -246,6 +257,20 @@ function dropCloudPhoto(image) {
 }
 
 const storageBox = document.querySelector("#storage");
+const storageLimit = 9_900_000_000;
+
+function localPhotoBytes() {
+  return data.photos.reduce((sum, photo) => {
+    const image = String(photo.image || "");
+    const comma = image.indexOf(",");
+    if (!image.startsWith("data:") || comma < 0) return sum;
+    return sum + Math.floor((image.length - comma - 1) * 0.75);
+  }, 0);
+}
+
+function showLocalStorage() {
+  if (!cloud) paintStorage(localPhotoBytes(), storageLimit);
+}
 
 function formatGb(bytes) {
   const gb = bytes / 1e9;
@@ -812,6 +837,7 @@ function finishUpload(item, image) {
   if (queue.some((entry) => entry.status === "uploading")) return;
   soundOk();
   if (cloud) refreshStorage();
+  else showLocalStorage();
 }
 
 function startCloudUpload(item) {
@@ -1569,6 +1595,7 @@ function removeSelected() {
   }
   clearEdit();
   renderList();
+  showLocalStorage();
   soundDelete();
 }
 
@@ -1639,4 +1666,5 @@ renderCategories();
 attachCalendar(document.querySelector("#review-date"));
 attachCalendar(edit.date);
 showPanel("overview");
+showLocalStorage();
 connectCloud().finally(() => document.body.classList.remove("is-syncing"));

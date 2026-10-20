@@ -277,11 +277,8 @@ function holdMotion(progress, hold = 0.46) {
 function stackRange() {
   if (!takeover || !takeoverPin) return null;
   const cards = takeover.querySelectorAll(".take-card").length;
-  if (!cards) return null;
-  if (onPhone()) {
-    const step = Math.round(window.innerHeight * 0.62);
-    takeover.style.height = `${takeoverPin.offsetHeight + Math.max(1, cards - 1) * step}px`;
-  } else if (takeover.style.height) takeover.style.height = "";
+  if (!cards || onPhone()) return null;
+  if (takeover.style.height) takeover.style.height = "";
   const stick = onPhone() ? navHeight() : 64;
   const top = layoutTop(takeover);
   const travel = Math.max(0, takeover.offsetHeight - takeoverPin.offsetHeight);
@@ -292,6 +289,17 @@ function stackRange() {
 function paintTakeover(scrollY) {
   const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
+  if (onPhone()) {
+    if (takeover.style.height) takeover.style.height = "";
+    takeoverPin.style.transform = "";
+    takeCards.forEach((card) => {
+      card.style.transform = "";
+      card.querySelectorAll("h3, p").forEach((line) => {
+        line.style.opacity = "";
+      });
+    });
+    return;
+  }
   const phone = onPhone();
   const range = stackRange();
   const stick = phone ? navHeight() : 64;
@@ -330,6 +338,10 @@ function paintAbout(scrollY) {
   const aboutTrack = document.querySelector(".about-track");
   const aboutPin = document.querySelector(".about-pin");
   if (!aboutTrack || !aboutPin || aboutWords.length === 0) return;
+  if (onPhone()) {
+    aboutPin.style.transform = "";
+    return;
+  }
   const stick = onPhone() ? navHeight() : 64;
   const top = layoutTop(aboutTrack);
   const local = scrollY - (top - stick);
