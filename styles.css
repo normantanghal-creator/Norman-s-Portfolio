@@ -3944,6 +3944,8 @@ body:has(.gear-soon) .stage-scroll {
 body:has(.gear-soon) #smooth {
   flex: 1;
   display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: 100%;
   padding-top: 0;
@@ -3954,13 +3956,16 @@ body:has(.gear-soon) #smooth {
   align-items: center;
   justify-content: center;
   width: 100%;
+  max-width: none;
   min-height: 100%;
   margin: 0;
   padding: 0;
 }
 
 .gear-soon p {
+  width: max-content;
   margin: 0;
+  text-align: center;
   font-family: var(--heading);
   font-weight: 600;
   font-size: 56px;

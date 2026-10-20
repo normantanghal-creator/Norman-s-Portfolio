@@ -336,20 +336,40 @@ if (root) {
   let target = 0;
   let current = 0;
   let heading = null;
+  let glide = null;
 
   function clamp(value) {
     return Math.min(maxScroll(), Math.max(0, value));
   }
 
+  function easeInOut(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  }
+
+  function cancelGlide() {
+    if (!glide) return;
+    if (!onPhone()) target = current;
+    glide = null;
+  }
+
   function goTo(element, offset) {
-    if (onPhone()) {
-      syncNavSpace();
-      heading = { element, offset: navHeight() + 12 };
-      window.scrollTo(0, Math.max(0, layoutTop(element) - heading.offset));
+    const phone = onPhone();
+    const gap = phone ? navHeight() + 12 : offset;
+    if (phone) syncNavSpace();
+    const top = phone ? Math.max(0, layoutTop(element) - gap) : clamp(layoutTop(element) - gap);
+    if (element.id === "book") {
+      heading = null;
+      glide = { element, offset: gap, from: phone ? window.scrollY : current, to: top, start: performance.now(), duration: 2000 };
+      return;
+    }
+    cancelGlide();
+    if (phone) {
+      heading = { element, offset: gap };
+      window.scrollTo(0, top);
       return;
     }
     heading = { element, offset };
-    target = clamp(layoutTop(element) - offset);
+    target = top;
   }
 
   window.addEventListener(
@@ -357,10 +377,12 @@ if (root) {
     (event) => {
       if (onPhone()) {
         heading = null;
+        cancelGlide();
         return;
       }
       event.preventDefault();
       heading = null;
+      cancelGlide();
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
       target = clamp(target + event.deltaY * unit);
     },
@@ -371,7 +393,10 @@ if (root) {
   window.addEventListener(
     "touchstart",
     (event) => {
-      if (onPhone()) heading = null;
+      if (onPhone()) {
+        heading = null;
+        cancelGlide();
+      }
       lastTouch = event.touches[0].clientY;
     },
     { passive: true },
@@ -383,6 +408,7 @@ if (root) {
       if (lastTouch === null) return;
       const y = event.touches[0].clientY;
       heading = null;
+      cancelGlide();
       target = clamp(target + (lastTouch - y));
       lastTouch = y;
       event.preventDefault();
@@ -396,6 +422,7 @@ if (root) {
   window.addEventListener("keydown", (event) => {
     if (onPhone()) {
       heading = null;
+      cancelGlide();
       return;
     }
     const tag = event.target && event.target.tagName;
@@ -403,7 +430,10 @@ if (root) {
     const viewer = document.querySelector("#viewer");
     if (viewer && !viewer.hidden) return;
     const step = event.key === "PageDown" || event.key === "PageUp" ? window.innerHeight * 0.85 : 80;
-    if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " ", "Home", "End"].includes(event.key)) heading = null;
+    if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", " ", "Home", "End"].includes(event.key)) {
+      heading = null;
+      cancelGlide();
+    }
     if (event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ") {
       event.preventDefault();
       target = clamp(target + step);
@@ -445,7 +475,12 @@ if (root) {
   function frame() {
     if (onPhone()) {
       syncNavSpace();
-      if (heading) {
+      if (glide) {
+        glide.to = Math.max(0, layoutTop(glide.element) - glide.offset);
+        const t = Math.min(1, (performance.now() - glide.start) / glide.duration);
+        window.scrollTo(0, glide.from + (glide.to - glide.from) * easeInOut(t));
+        if (t === 1) glide = null;
+      } else if (heading) {
         const top = Math.max(0, layoutTop(heading.element) - heading.offset);
         if (Math.abs(window.scrollY - top) > 1) window.scrollTo(0, top);
       }
@@ -457,9 +492,17 @@ if (root) {
       requestAnimationFrame(frame);
       return;
     }
-    if (heading) target = clamp(layoutTop(heading.element) - heading.offset);
-    current += (target - current) * 0.045;
-    if (Math.abs(target - current) < 0.4) current = target;
+    if (glide) {
+      glide.to = clamp(layoutTop(glide.element) - glide.offset);
+      const t = Math.min(1, (performance.now() - glide.start) / glide.duration);
+      current = glide.from + (glide.to - glide.from) * easeInOut(t);
+      target = t === 1 ? glide.to : current;
+      if (t === 1) glide = null;
+    } else {
+      if (heading) target = clamp(layoutTop(heading.element) - heading.offset);
+      current += (target - current) * 0.045;
+      if (Math.abs(target - current) < 0.4) current = target;
+    }
     root.style.transform = `translate3d(0, ${-current}px, 0)`;
     paintAbout(current);
     paintTakeover(current);
@@ -519,7 +562,7 @@ if (saipan) {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: true,
+      hourCycle: "h23",
     }).format(new Date());
     saipan.dateTime = clockText;
     if (!hoveringClock) saipan.textContent = clockText;
