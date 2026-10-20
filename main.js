@@ -274,15 +274,28 @@ function holdMotion(progress, hold = 0.46) {
   return 1 - (1 - t) ** 3;
 }
 
+function stackRange() {
+  if (!takeover || !takeoverPin) return null;
+  const cards = takeover.querySelectorAll(".take-card").length;
+  if (!cards) return null;
+  if (onPhone()) {
+    const step = Math.round(window.innerHeight * 0.62);
+    takeover.style.height = `${takeoverPin.offsetHeight + Math.max(1, cards - 1) * step}px`;
+  } else if (takeover.style.height) takeover.style.height = "";
+  const stick = onPhone() ? navHeight() : 64;
+  const top = layoutTop(takeover);
+  const travel = Math.max(0, takeover.offsetHeight - takeoverPin.offsetHeight);
+  if (travel < 40) return null;
+  return { start: top - stick, end: top - stick + travel };
+}
+
 function paintTakeover(scrollY) {
   const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
   const phone = onPhone();
-  if (phone) {
-    const step = Math.round(window.innerHeight * 0.62);
-    takeover.style.height = `${takeoverPin.offsetHeight + Math.max(1, takeCards.length - 1) * step}px`;
-  } else if (takeover.style.height) takeover.style.height = "";
+  const range = stackRange();
   const stick = phone ? navHeight() : 64;
+  if (!range) return;
   const top = layoutTop(takeover);
   const local = scrollY - (top - stick);
   const travel = Math.max(1, takeover.offsetHeight - takeoverPin.offsetHeight);
@@ -344,6 +357,19 @@ if (root) {
 
   function easeInOut(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  }
+
+  function glideY(from, to, t) {
+    const range = stackRange();
+    let cut = to;
+    let skip = 0;
+    if (range && from < range.end && to > range.end) {
+      cut = Math.max(from, range.start);
+      skip = range.end - cut;
+    }
+    const traveled = Math.max(0, to - from - skip) * easeInOut(t);
+    if (from + traveled <= cut) return from + traveled;
+    return from + traveled + skip;
   }
 
   function cancelGlide() {
@@ -478,7 +504,7 @@ if (root) {
       if (glide) {
         glide.to = Math.max(0, layoutTop(glide.element) - glide.offset);
         const t = Math.min(1, (performance.now() - glide.start) / glide.duration);
-        window.scrollTo(0, glide.from + (glide.to - glide.from) * easeInOut(t));
+        window.scrollTo(0, glideY(glide.from, glide.to, t));
         if (t === 1) glide = null;
       } else if (heading) {
         const top = Math.max(0, layoutTop(heading.element) - heading.offset);
@@ -495,7 +521,7 @@ if (root) {
     if (glide) {
       glide.to = clamp(layoutTop(glide.element) - glide.offset);
       const t = Math.min(1, (performance.now() - glide.start) / glide.duration);
-      current = glide.from + (glide.to - glide.from) * easeInOut(t);
+      current = glideY(glide.from, glide.to, t);
       target = t === 1 ? glide.to : current;
       if (t === 1) glide = null;
     } else {
