@@ -46,7 +46,15 @@ export function cleanLibrary(input) {
     .slice(0, 8)
     .map((item) => ({ title: text(item && item.title, 60), text: text(item && item.text, 280) }))
     .filter((item) => item.title);
-  const library = { categories, photos, about: text(input.about, 1200) };
+  const library = {
+    categories,
+    photos,
+    about: text(input.about, 1200),
+    heroTitle: text(input.heroTitle, 140),
+    heroText: text(input.heroText, 280),
+    heroImage: keyFromPublicUrl(input.heroImage) ? String(input.heroImage) : "",
+    heroStyle: input.heroStyle === "solid" ? "solid" : "overlay",
+  };
   if (services.length >= 3) library.services = services;
   return library;
 }

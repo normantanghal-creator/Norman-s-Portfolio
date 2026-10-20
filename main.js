@@ -148,6 +148,7 @@ if (typeof loadLibrary === "function" && document.querySelector("#featured")) {
     const library = remote || loadLibrary();
     paintFeatured(library);
     paintTakeoverPhotos(library);
+    paintHero(library);
     paintServices(library.services);
     paintAboutText(library.about);
     document.querySelectorAll(".is-loading").forEach((element) => element.classList.remove("is-loading"));
@@ -170,6 +171,27 @@ if (themeButton) {
 
 const aboutCopy = document.querySelector(".about-copy");
 const aboutWords = [];
+
+function paintHero(library) {
+  const hero = document.querySelector(".hero");
+  const title = document.querySelector(".hero h1");
+  const lede = document.querySelector(".hero .lede");
+  if (!hero || !title || !library) return;
+  title.textContent = library.heroTitle || title.textContent;
+  if (lede) {
+    lede.textContent = library.heroText || "";
+    lede.hidden = !library.heroText;
+  }
+  const photo = document.querySelector(".hero-photo");
+  const image = library.heroImage ? `url("${String(library.heroImage).replace(/["\\]/g, "")}")` : "";
+  const solid = library.heroStyle === "solid" && image;
+  hero.classList.toggle("is-overlay", Boolean(image) && !solid);
+  hero.classList.toggle("is-solid", Boolean(solid));
+  hero.style.backgroundImage = "";
+  if (image) hero.style.setProperty("--hero-image", image);
+  else hero.style.removeProperty("--hero-image");
+  if (photo) photo.hidden = !solid;
+}
 
 function paintAboutText(text) {
   if (!aboutCopy) return;

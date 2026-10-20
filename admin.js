@@ -174,6 +174,10 @@ async function connectCloud() {
   data.categories = remote.categories;
   data.photos = remote.photos;
   data.about = remote.about;
+  data.heroTitle = remote.heroTitle;
+  data.heroText = remote.heroText;
+  data.heroImage = remote.heroImage;
+  data.heroStyle = remote.heroStyle;
   data.services = remote.services;
   if (view === "site") renderSite();
   clearEdit();
@@ -440,7 +444,7 @@ function renderList() {
     else if (view === "later") note.textContent = laterTotal ? "Set aside for later. Nothing here is deleted." : "Nothing set aside";
     else if (view === "upload") note.textContent = "Add photographs here. Titles can be filled in as they upload.";
     else if (view === "categories") note.textContent = "These groups show up on the work page.";
-    else if (view === "site") note.textContent = "The About me text and the services on the home page.";
+    else if (view === "site") note.textContent = "The home banner, About me, and the services.";
     else note.textContent = `${matches.length} photographs`;
   }
   if (setup) {
@@ -1420,9 +1424,38 @@ const siteServices = document.querySelector("#site-services");
 const siteAdd = document.querySelector("#site-add");
 const siteLayouts = { 3: "one row of 3", 4: "2 on top, 2 below", 5: "3 on top, 2 below", 6: "two rows of 3", 7: "4 on top, 3 below", 8: "two rows of 4" };
 let siteDraft = [];
+let bannerPreview = "";
+let bannerRemoved = false;
+let bannerStyle = "overlay";
+
+function paintBanner(src) {
+  const box = document.querySelector("#banner-photo");
+  box.replaceChildren();
+  document.querySelector("#banner-clear").hidden = !src;
+  if (!src) return;
+  const img = document.createElement("img");
+  img.src = src;
+  img.alt = "";
+  box.appendChild(img);
+}
+
+function paintBannerStyle() {
+  document.querySelectorAll("#banner-styles button").forEach((button) => {
+    button.classList.toggle("is-on", button.dataset.heroStyle === bannerStyle);
+  });
+}
 
 function renderSite() {
+  siteForm.heroTitle.value = data.heroTitle;
+  siteForm.heroText.value = data.heroText;
   siteForm.about.value = data.about;
+  siteForm.banner.value = "";
+  if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+  bannerPreview = "";
+  bannerRemoved = false;
+  bannerStyle = data.heroStyle === "solid" ? "solid" : "overlay";
+  paintBannerStyle();
+  paintBanner(data.heroImage);
   siteDraft = data.services.map((service) => ({ ...service }));
   paintSiteServices();
 }
@@ -1481,28 +1514,80 @@ siteAdd.addEventListener("click", () => {
   siteServices.querySelector(".site-service:last-child input").focus();
 });
 
-siteForm.addEventListener("submit", (event) => {
+siteForm.banner.addEventListener("change", () => {
+  const file = siteForm.banner.files[0];
+  if (!file) return;
+  if (!photoFileOk(file)) {
+    siteForm.banner.value = "";
+    soundBad();
+    return;
+  }
+  if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+  bannerPreview = URL.createObjectURL(file);
+  bannerRemoved = false;
+  paintBanner(bannerPreview);
+});
+
+document.querySelector("#banner-styles").addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  bannerStyle = button.dataset.heroStyle === "solid" ? "solid" : "overlay";
+  paintBannerStyle();
+});
+
+document.querySelector("#banner-clear").addEventListener("click", () => {
+  siteForm.banner.value = "";
+  if (bannerPreview) URL.revokeObjectURL(bannerPreview);
+  bannerPreview = "";
+  bannerRemoved = true;
+  paintBanner("");
+});
+
+siteForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  const heroTitle = safeText(siteForm.heroTitle.value, 140);
+  const heroText = safeText(siteForm.heroText.value, 280);
   const about = safeText(siteForm.about.value, 1200);
   const services = siteDraft.map((service) => ({ title: safeText(service.title, 60), text: safeText(service.text, 280) }));
+  siteForm.heroTitle.classList.toggle("is-bad", !heroTitle);
   siteForm.about.classList.toggle("is-bad", !about);
   siteServices.querySelectorAll(".site-service input").forEach((input, index) => {
     input.classList.toggle("is-bad", !services[index].title);
   });
-  if (!about || services.some((service) => !service.title)) {
+  if (!heroTitle || !about || services.some((service) => !service.title)) {
     soundBad();
     return;
   }
-  const previous = { about: data.about, services: data.services };
+  let heroImage = bannerRemoved ? "" : data.heroImage;
+  const file = siteForm.banner.files[0];
+  if (file) {
+    try {
+      heroImage = await readPhoto(file);
+    } catch {
+      soundBad();
+      return;
+    }
+  }
+  const previous = {
+    about: data.about,
+    services: data.services,
+    heroTitle: data.heroTitle,
+    heroText: data.heroText,
+    heroImage: data.heroImage,
+    heroStyle: data.heroStyle,
+  };
   data.about = about;
   data.services = services;
+  data.heroTitle = heroTitle;
+  data.heroText = heroText;
+  data.heroImage = heroImage;
+  data.heroStyle = bannerStyle;
   if (!persist()) {
-    data.about = previous.about;
-    data.services = previous.services;
+    Object.assign(data, previous);
     return;
   }
   renderSite();
-  done("Saved", "About me and the services are updated on the home page.");
+  done("Saved", "The home banner, About me, and the services are updated.");
 });
 
 siteForm.about.addEventListener("input", () => siteForm.about.classList.remove("is-bad"));

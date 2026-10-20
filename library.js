@@ -10,6 +10,11 @@ const seedLibrary = {
     { id: "sunday-market", title: "Sunday Market", caption: "A demo sentence about fruit and early hands.", category: "Street", date: "2024-02-04", image: "" },
     { id: "after-dark", title: "After Dark", caption: "A demo sentence about lamps and wet pavement.", category: "Night", date: "2023-09-30", image: "" },
   ],
+  heroTitle: "Norman photographs weather, rooms, and quiet streets",
+  heroText:
+    "Demo sentences about light, coastlines, and the hour before a room is packed up. Swap this for the real introduction when you have it.",
+  heroImage: "",
+  heroStyle: "overlay",
   about:
     "Norman photographs weather, rooms, and the quiet stretch after the shops close. These are demo sentences about light, waiting, and people who stay still for a moment. Swap this block for the real introduction when it is ready. The note to keep is simple: leave the pictures honest, and leave room for the person in front of the lens.",
   services: [
@@ -106,6 +111,10 @@ function cleanLibrary(data) {
     categories: categories.length ? categories : structuredClone(seedLibrary.categories),
     photos,
     about: safeText(data.about, 1200) || seedLibrary.about,
+    heroTitle: safeText(data.heroTitle, 140) || seedLibrary.heroTitle,
+    heroText: "heroText" in data ? safeText(data.heroText, 280) : seedLibrary.heroText,
+    heroImage: safeImage(data.heroImage),
+    heroStyle: data.heroStyle === "solid" ? "solid" : "overlay",
     services: cleanServices(data.services),
   };
 }

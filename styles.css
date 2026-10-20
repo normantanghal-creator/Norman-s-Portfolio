@@ -27,8 +27,8 @@ html[data-theme="oled"] {
   --bg-3: #141414;
   --text: #e8e8e8;
   --muted: #8a8a8a;
-  --btn: #000000;
-  --btn-text: #e8e8e8;
+  --btn: #e8e8e8;
+  --btn-text: #000000;
   --btn-alt: #000000;
   --btn-alt-text: #e8e8e8;
   --line: #2a2a2a;
@@ -368,6 +368,74 @@ details.menu > div::before {
   justify-content: center;
 }
 
+.hero-photo[hidden] {
+  display: none;
+}
+
+.hero.is-overlay {
+  width: auto;
+  height: auto;
+  margin: 20px 16px 24px;
+  min-height: calc(100vh - 150px);
+  padding: 72px 24px;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #141414;
+  color: #fff;
+}
+
+.hero.is-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.46;
+}
+
+.hero.is-overlay .hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.hero.is-overlay .lede {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.hero.is-overlay .btn-light {
+  background: #f4f4f4;
+  color: #111;
+}
+
+.hero.is-overlay .btn-dark {
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+.hero.is-solid {
+  flex-direction: column;
+  height: auto;
+  min-height: 0;
+  gap: 36px;
+}
+
+.hero.is-solid .hero-photo {
+  align-self: stretch;
+  width: auto;
+  height: min(62vh, 680px);
+  margin: 20px 16px 0;
+  border-radius: 28px;
+  background-image: var(--hero-image);
+  background-size: cover;
+  background-position: center;
+}
+
+.hero .lede[hidden] {
+  display: none;
+}
+
 h1 {
   margin: 0;
   max-width: 640px;
@@ -421,12 +489,16 @@ h1 {
 }
 
 html[data-theme="dark"] .btn-dark {
+  background: transparent;
+  border-color: #d0d0d0;
+}
+
+html[data-theme="oled"] .btn-light {
   border-color: transparent;
 }
 
-html[data-theme="oled"] .btn-dark,
-html[data-theme="oled"] .btn-light {
-  border: 1px solid #3a3a3a;
+html[data-theme="oled"] .btn-dark {
+  border-color: #e8e8e8;
 }
 
 .stage {
@@ -1176,6 +1248,15 @@ html[data-theme="dark"] .viewer {
     display: block;
     height: auto;
     min-height: 0;
+  }
+
+  .hero.is-solid .hero-photo {
+    height: 42vh;
+    margin: 12px 0 0;
+  }
+
+  .hero.is-overlay {
+    margin: 12px 0 20px;
   }
 
   .hero-copy,
@@ -2815,6 +2896,42 @@ html[data-theme="dark"] #category-list li {
   display: none;
 }
 
+.banner-styles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.banner-styles button {
+  border: 1px solid #8a8a8a;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  padding: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.banner-styles button.is-on {
+  background: #1c1c1c;
+  color: #fff;
+  border-color: #1c1c1c;
+}
+
+html[data-theme="dark"] .banner-styles button.is-on,
+html[data-theme="oled"] .banner-styles button.is-on {
+  background: #f4f4f4;
+  color: #1a1a1a;
+  border-color: #f4f4f4;
+}
+
+.banner-photo img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
 .site-save {
   align-self: flex-start;
   min-width: 160px;
@@ -2833,7 +2950,27 @@ html[data-theme="dark"] .site-service {
 
 html[data-theme="oled"] .site-service {
   background: #000;
-  box-shadow: inset 0 0 0 1px #2a2a2a;
+  box-shadow: inset 0 0 0 1px #3a3a3a;
+}
+
+html[data-theme="dark"] .site-edit input,
+html[data-theme="dark"] .site-edit textarea {
+  background: #2a2a2a;
+  color: #f4f4f4;
+}
+
+html[data-theme="oled"] .site-edit input,
+html[data-theme="oled"] .site-edit textarea {
+  background: #000;
+  color: #e8e8e8;
+  border-color: #8a8a8a;
+}
+
+html[data-theme="dark"] .site-head small,
+html[data-theme="dark"] .site-service-top,
+html[data-theme="oled"] .site-head small,
+html[data-theme="oled"] .site-service-top {
+  color: #c8c8c8;
 }
 
 html[data-theme="dark"] .site-save,
@@ -3563,7 +3700,10 @@ html[data-theme="oled"] .nav-links a[aria-current="page"]:hover {
   box-shadow: inset 0 0 0 1px #3a3a3a;
 }
 
-html[data-theme="oled"] .contact-btn,
+html[data-theme="oled"] .contact-btn {
+  box-shadow: inset 0 0 0 1px #b0b0b0;
+}
+
 html[data-theme="oled"] .pill-menu > summary,
 html[data-theme="oled"] .viewer-arrow,
 html[data-theme="oled"] .service-row article,
@@ -4199,7 +4339,6 @@ body:has(.gear-soon) #smooth {
     text-align: center;
   }
 
-  .hero .lede,
   .hero .btn-light {
     display: none;
   }

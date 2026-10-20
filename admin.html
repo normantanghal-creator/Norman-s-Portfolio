@@ -187,6 +187,27 @@
           <ul id="category-list"></ul>
         </div>
         <form class="site-edit" id="site" hidden>
+          <div class="site-head">
+            <h2>Home banner</h2>
+          </div>
+          <label class="site-field">
+            <span>Bold line</span>
+            <textarea name="heroTitle" rows="3" maxlength="140" placeholder="The large line on the home page"></textarea>
+          </label>
+          <label class="site-field">
+            <span>Smaller line, optional</span>
+            <textarea name="heroText" rows="3" maxlength="280" placeholder="Leave empty to hide this line"></textarea>
+          </label>
+          <div class="banner-photo" id="banner-photo"></div>
+          <label class="review-file">
+            Banner photo
+            <input name="banner" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif" />
+          </label>
+          <button class="site-add" id="banner-clear" type="button">Remove photo</button>
+          <div class="banner-styles" id="banner-styles">
+            <button type="button" data-hero-style="overlay">Words on a faint photo</button>
+            <button type="button" data-hero-style="solid">Solid photo, then the words</button>
+          </div>
           <label class="site-field">
             <span>About me</span>
             <textarea name="about" rows="7" maxlength="1200" placeholder="A few sentences about Norman"></textarea>
