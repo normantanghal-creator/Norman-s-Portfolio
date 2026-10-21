@@ -74,7 +74,8 @@
           <div class="rail-storage-bar"><span id="storage-fill"></span></div>
         </div>
         <div class="rail-user">
-          <img class="rail-avatar" id="user-photo" alt="" />
+          <img class="rail-avatar" id="user-photo" alt="" hidden referrerpolicy="no-referrer" />
+          <span class="rail-avatar rail-letter" id="user-letter" hidden></span>
           <strong>Norman</strong>
           <button class="theme" id="theme" type="button" aria-label="Use charcoal mode">
             <span class="theme-icon" aria-hidden="true">
@@ -97,6 +98,17 @@
           <div>
             <h1 id="list-title">Overview</h1>
             <p id="list-note"></p>
+          </div>
+          <div class="desk-tools">
+            <div class="zoom-bar" id="zoom-bar" hidden>
+              <button type="button" id="zoom-out" aria-label="Show more photographs">−</button>
+              <button type="button" id="zoom-in" aria-label="Show larger photographs">+</button>
+            </div>
+            <div class="pick-bar">
+              <button type="button" id="pick-start" hidden>Select</button>
+              <button type="button" id="pick-cancel" hidden>Cancel</button>
+              <button type="button" id="pick-delete" hidden>Delete</button>
+            </div>
           </div>
           <button class="cat-plus" id="cat-add" type="button" hidden aria-label="Add category">+</button>
         </header>
@@ -236,7 +248,6 @@
           </label>
           <div class="desk-actions">
             <button class="enter" type="submit">Save</button>
-            <button class="ghost" type="button" id="remove">Delete</button>
             <button class="ghost" type="button" id="restore" hidden>Put back in review</button>
           </div>
         </div>
@@ -261,15 +272,11 @@
         </div>
       </article>
     </div>
+    <div class="pick-box" id="pick-box" hidden></div>
     <div class="modal" id="confirm">
       <article class="confirm-card">
         <h2>Delete this photograph?</h2>
         <p>This removes it from the library.</p>
-        <label class="confirm-skip">
-          <input id="skip-delete-ask" type="checkbox" />
-          <span class="check" aria-hidden="true"></span>
-          Don't ask for 7 days
-        </label>
         <div class="modal-actions">
           <button class="quiet" type="button" id="confirm-cancel">Cancel</button>
           <button class="danger" type="button" id="confirm-delete">Delete</button>

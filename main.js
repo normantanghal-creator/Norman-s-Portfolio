@@ -112,7 +112,7 @@ function scrollPhotos(library) {
   return library.photos
     .filter((photo) => photo.scroll && safeImage(photo.image))
     .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0))
-    .slice(0, 3);
+    .slice(0, 6);
 }
 
 function paintTakeoverPhotos(library) {
@@ -120,6 +120,8 @@ function paintTakeoverPhotos(library) {
   if (!windowEl) return;
   const photos = scrollPhotos(library);
   if (!photos.length) return;
+  const section = document.querySelector(".takeover");
+  if (section) section.style.setProperty("--take-steps", String(Math.max(1, photos.length - 1)));
   windowEl.replaceChildren();
   photos.forEach((photo) => {
     const article = document.createElement("article");

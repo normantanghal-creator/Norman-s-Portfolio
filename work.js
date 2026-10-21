@@ -100,8 +100,15 @@ if (covers && catBox && density) {
     const src = safeImage(photo.image);
     if (src) {
       const img = document.createElement("img");
-      img.src = src;
       img.alt = "";
+      img.addEventListener("load", () => {
+        const maxW = window.innerWidth - (window.innerWidth < 700 ? 96 : 140);
+        const maxH = window.innerHeight - (window.innerWidth < 700 ? 170 : 190);
+        const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight);
+        img.style.width = `${Math.round(img.naturalWidth * scale)}px`;
+        img.style.height = `${Math.round(img.naturalHeight * scale)}px`;
+      });
+      img.src = src;
       viewerPhoto.appendChild(img);
     }
     viewerTitle.textContent = photo.title;

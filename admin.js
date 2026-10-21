@@ -57,13 +57,39 @@ if (themeButton) {
 }
 
 const userPhoto = document.querySelector("#user-photo");
-const savedPhoto = sessionStorage.getItem("norman-photo");
-if (userPhoto) {
-  if (savedPhoto) userPhoto.src = savedPhoto;
-  else userPhoto.hidden = true;
-  userPhoto.addEventListener("error", () => {
-    userPhoto.hidden = true;
-  });
+const userLetter = document.querySelector("#user-letter");
+
+function googleColor(seed) {
+  const colors = ["#1a73e8", "#d93025", "#f9ab00", "#1e8e3e", "#9334e6", "#e8710a", "#12b5cb", "#a142f4"];
+  let hash = 0;
+  for (const char of seed || "?") hash = (hash + char.charCodeAt(0)) % colors.length;
+  return colors[hash];
+}
+
+function showGoogleLetter(label) {
+  if (userPhoto) userPhoto.hidden = true;
+  if (!userLetter) return;
+  const text = label.trim();
+  userLetter.textContent = (text[0] || "?").toUpperCase();
+  userLetter.style.background = googleColor(text);
+  userLetter.hidden = false;
+}
+
+function paintGoogleUser(user) {
+  const label = user.name || user.email || "";
+  const name = document.querySelector(".rail-user strong");
+  if (name && label) name.textContent = label;
+  const picture = typeof user.picture === "string" && user.picture.startsWith("https://") ? user.picture : "";
+  if (!picture || !userPhoto) {
+    showGoogleLetter(label);
+    return;
+  }
+  userPhoto.alt = label;
+  userPhoto.referrerPolicy = "no-referrer";
+  userPhoto.onerror = () => showGoogleLetter(label);
+  if (userLetter) userLetter.hidden = true;
+  userPhoto.hidden = false;
+  userPhoto.src = picture;
 }
 
 const data = loadLibrary();
@@ -151,13 +177,7 @@ async function connectCloud() {
     }
     return;
   }
-  const name = document.querySelector(".rail-user strong");
-  if (name && session.user.name) name.textContent = session.user.name;
-  if (userPhoto && session.user.picture) {
-    userPhoto.src = session.user.picture;
-    userPhoto.referrerPolicy = "no-referrer";
-    userPhoto.hidden = false;
-  }
+  paintGoogleUser(session.user);
   let remote = null;
   try {
     const res = await fetch("/api/library", { cache: "no-store" });
@@ -360,6 +380,10 @@ function showPanel(name) {
     else if (name === "site") title.textContent = "About & services";
     else title.textContent = "Photographs";
   }
+  if (name !== "library") {
+    picking = false;
+    picked.clear();
+  }
   renderList();
 }
 
@@ -409,7 +433,53 @@ function renderSuggestions() {
   });
 }
 
+let picking = false;
+const picked = new Set();
+
+const zoomSteps = [64, 88, 112, 148, 190, 240, 320];
+let zoom = 3;
+try {
+  const savedZoom = localStorage.getItem("norman-zoom");
+  const zoomIndex = Number(savedZoom);
+  if (savedZoom !== null && zoomIndex >= 0 && zoomIndex < zoomSteps.length) zoom = zoomIndex;
+} catch {
+  zoom = 3;
+}
+
+function paintZoom() {
+  const bar = document.querySelector("#zoom-bar");
+  bar.hidden = view !== "library";
+  library.style.setProperty("--tile", `${zoomSteps[zoom]}px`);
+  library.dataset.zoom = String(zoom);
+  document.querySelector("#zoom-out").disabled = zoom === 0;
+  document.querySelector("#zoom-in").disabled = zoom === zoomSteps.length - 1;
+}
+
+function setZoom(next) {
+  zoom = Math.max(0, Math.min(zoomSteps.length - 1, next));
+  try {
+    localStorage.setItem("norman-zoom", String(zoom));
+  } catch {
+    // The size still changes on this page.
+  }
+  paintZoom();
+}
+
+function paintPickBar() {
+  const start = document.querySelector("#pick-start");
+  const cancel = document.querySelector("#pick-cancel");
+  const remove = document.querySelector("#pick-delete");
+  const show = view === "library";
+  start.hidden = !show || picking;
+  cancel.hidden = !show || !picking;
+  remove.hidden = !show || !picking;
+  remove.disabled = picked.size === 0;
+  remove.textContent = picked.size ? `Delete ${picked.size}` : "Delete";
+  paintZoom();
+}
+
 function renderList() {
+  paintPickBar();
   const term = search.value.trim().toLowerCase();
   let matches = data.photos.filter((photo) => photoText(photo).includes(term));
   if (view === "later") matches = matches.filter((photo) => photo.later);
@@ -445,7 +515,7 @@ function renderList() {
     else if (view === "upload") note.textContent = "Add photographs here. Titles can be filled in as they upload.";
     else if (view === "categories") note.textContent = "These groups show up on the work page.";
     else if (view === "site") note.textContent = "The home banner, About me, and the services.";
-    else note.textContent = `${matches.length} photographs`;
+    else note.textContent = view === "library" && !term ? (picking ? "Drag across the photographs to select them." : "Drag a photograph to arrange the work page.") : `${matches.length} photographs`;
   }
   if (setup) {
     const doneSteps = Number(Boolean(data.photos.length)) + Number(data.photos.some((photo) => photo.image)) + Number(data.categories.length > 1);
@@ -458,9 +528,15 @@ function renderList() {
     return;
   }
   library.replaceChildren();
+  const canDrag = view === "library" && !search.value.trim() && !picking;
+  library.classList.toggle("is-grid", view === "library");
+  library.classList.toggle("is-picking", view === "library" && picking);
   matches.forEach((photo) => {
     const row = document.createElement("div");
-    row.className = photo.id === selected ? "photo-row is-on" : "photo-row";
+    row.className = photo.id === selected && !picking ? "photo-row is-on" : "photo-row";
+    if (picking && picked.has(photo.id)) row.classList.add("is-picked");
+    row.dataset.id = photo.id;
+    if (canDrag) row.addEventListener("pointerdown", (event) => liftPhoto(event, row));
     const open = document.createElement("button");
     open.type = "button";
     open.className = "photo-open";
@@ -471,6 +547,7 @@ function renderList() {
       const img = document.createElement("img");
       img.src = src;
       img.alt = "";
+      img.draggable = false;
       thumb.appendChild(img);
     }
     const copy = document.createElement("span");
@@ -481,18 +558,101 @@ function renderList() {
     meta.textContent = view === "later" && gaps.length ? gaps.join(" · ") : photo.category;
     copy.append(title, meta);
     open.append(thumb, copy);
-    open.addEventListener("click", () => selectPhoto(photo.id));
+    open.addEventListener("click", (event) => {
+      if (row.dataset.dragged === "1") {
+        delete row.dataset.dragged;
+        event.preventDefault();
+        return;
+      }
+      if (picking) {
+        if (library.dataset.marquee === "1") {
+          delete library.dataset.marquee;
+          return;
+        }
+        if (picked.has(photo.id)) picked.delete(photo.id);
+        else picked.add(photo.id);
+        renderList();
+        return;
+      }
+      selectPhoto(photo.id);
+    });
     row.appendChild(open);
     if (view === "library") {
       const marks = document.createElement("div");
       marks.className = "photo-marks";
-      marks.append(starButton(photo), scrollButton(photo));
+      marks.append(starButton(photo), scrollButton(photo), deleteButton(photo));
       row.appendChild(marks);
     }
     library.appendChild(row);
   });
   starPopId = "";
   scrollPopId = "";
+  paintPickBar();
+}
+
+function liftPhoto(event, row) {
+  if (event.button !== 0 || event.target.closest(".star, .scroll-mark, .photo-delete")) return;
+  event.preventDefault();
+  const rect = row.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+  const gap = document.createElement("div");
+  gap.className = "photo-gap";
+  gap.style.height = `${rect.height}px`;
+  library.insertBefore(gap, row);
+  row.classList.add("is-lifted");
+  row.setPointerCapture(event.pointerId);
+  row.style.left = `${rect.left}px`;
+  row.style.top = `${rect.top}px`;
+  row.style.width = `${rect.width}px`;
+  row.style.height = `${rect.height}px`;
+  row.setPointerCapture(event.pointerId);
+  let moved = false;
+  const move = (pointer) => {
+    if (Math.hypot(pointer.clientX - event.clientX, pointer.clientY - event.clientY) > 5) moved = true;
+    row.style.left = `${pointer.clientX - offsetX}px`;
+    row.style.top = `${pointer.clientY - offsetY}px`;
+    row.style.pointerEvents = "none";
+    const hit = document.elementFromPoint(pointer.clientX, pointer.clientY);
+    row.style.pointerEvents = "";
+    const over = hit && hit.closest("#library .photo-row");
+    if (!over || over === row) return;
+    const box = over.getBoundingClientRect();
+    const placeAfter = pointer.clientX > box.left + box.width / 2;
+    const spot = placeAfter ? over.nextSibling : over;
+    if (spot !== gap) library.insertBefore(gap, spot);
+  };
+  const drop = () => {
+    library.insertBefore(row, gap);
+    gap.remove();
+    row.classList.remove("is-lifted");
+    row.style.cssText = "";
+    row.removeEventListener("pointermove", move);
+    row.removeEventListener("pointerup", drop);
+    row.removeEventListener("pointercancel", drop);
+    if (!moved) return;
+    row.dataset.dragged = "1";
+    const ids = [...library.querySelectorAll(".photo-row")].map((item) => item.dataset.id);
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    data.photos.sort((a, b) => rank.get(a.id) - rank.get(b.id));
+    persist();
+  };
+  row.addEventListener("pointermove", move);
+  row.addEventListener("pointerup", drop);
+  row.addEventListener("pointercancel", drop);
+}
+
+function deleteButton(photo) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "photo-delete";
+  button.setAttribute("aria-label", `Delete ${photo.title || "photograph"}`);
+  button.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.2 4.2h9.6M6.2 4.1V3h3.6v1.1M4.4 4.2l.6 8.2h5.9l.6-8.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    askDelete([photo.id]);
+  });
+  return button;
 }
 
 function starButton(photo) {
@@ -546,7 +706,7 @@ function toggleScroll(photo) {
     photo.scrollAt = 0;
     scrollPopId = "";
   } else {
-    if (data.photos.filter((item) => item.scroll).length >= 3) {
+    if (data.photos.filter((item) => item.scroll).length >= 6) {
       soundBad();
       return;
     }
@@ -1638,52 +1798,111 @@ edit.addEventListener("submit", (event) => {
 });
 
 const confirm = document.querySelector("#confirm");
-const skipDeleteAsk = document.querySelector("#skip-delete-ask");
-const deleteQuietKey = "norman-delete-quiet-until";
-const deleteQuietFor = 7 * 24 * 60 * 60 * 1000;
 
-function deleteIsQuiet() {
-  try {
-    const until = Number(localStorage.getItem(deleteQuietKey));
-    if (!until) return false;
-    if (Date.now() >= until) {
-      localStorage.removeItem(deleteQuietKey);
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
+let pendingDelete = [];
+
+function askDelete(ids) {
+  pendingDelete = ids.filter((id) => data.photos.some((photo) => photo.id === id));
+  if (!pendingDelete.length) return;
+  document.querySelector("#confirm h2").textContent = pendingDelete.length > 1 ? `Delete ${pendingDelete.length} photographs?` : "Delete this photograph?";
+  document.querySelector("#confirm p").textContent = pendingDelete.length > 1 ? "This removes them from the library." : "This removes it from the library.";
+  confirm.classList.add("is-on");
 }
 
-function removeSelected() {
-  const index = data.photos.findIndex((item) => item.id === selected);
-  if (index < 0) return;
-  const removed = data.photos.splice(index, 1)[0];
+function removePhotos(ids) {
+  const idSet = new Set(ids);
+  const removed = data.photos.filter((photo) => idSet.has(photo.id));
+  if (!removed.length) return;
+  const previous = data.photos;
+  data.photos = data.photos.filter((photo) => !idSet.has(photo.id));
   if (!persist()) {
-    data.photos.splice(index, 0, removed);
+    data.photos = previous;
     return;
   }
   if (cloud) {
     window.clearTimeout(cloudTimer);
     pushLibrary().then((saved) => {
-      if (saved) dropCloudPhoto(removed.image);
+      if (saved) removed.forEach((photo) => dropCloudPhoto(photo.image));
     });
   }
-  clearEdit();
+  if (idSet.has(selected)) clearEdit();
+  picked.clear();
+  picking = false;
   renderList();
   showLocalStorage();
   soundDelete();
 }
 
-document.querySelector("#remove").addEventListener("click", () => {
-  if (!selected) return;
-  if (deleteIsQuiet()) {
-    removeSelected();
-    return;
-  }
-  skipDeleteAsk.checked = false;
-  confirm.classList.add("is-on");
+const pickBox = document.querySelector("#pick-box");
+const listPanel = document.querySelector(".desk-list");
+
+library.addEventListener("dragstart", (event) => {
+  if (picking) event.preventDefault();
+});
+
+listPanel.addEventListener("pointerdown", (event) => {
+  if (!picking || event.button !== 0 || !library.classList.contains("is-grid")) return;
+  if (event.target.closest(".desk-head, .star, .scroll-mark, .photo-delete, a, input, textarea, select")) return;
+  const originX = event.clientX;
+  const originY = event.clientY;
+  let moved = false;
+  const paintBox = (pointer) => {
+    const left = Math.min(originX, pointer.clientX);
+    const top = Math.min(originY, pointer.clientY);
+    const width = Math.abs(pointer.clientX - originX);
+    const height = Math.abs(pointer.clientY - originY);
+    pickBox.hidden = false;
+    pickBox.style.left = `${left}px`;
+    pickBox.style.top = `${top}px`;
+    pickBox.style.width = `${Math.max(width, 1)}px`;
+    pickBox.style.height = `${Math.max(height, 1)}px`;
+    picked.clear();
+    library.querySelectorAll(".photo-row").forEach((row) => {
+      const rect = row.getBoundingClientRect();
+      const hit = rect.left < left + width && rect.right > left && rect.top < top + height && rect.bottom > top;
+      row.classList.toggle("is-picked", hit);
+      if (hit) picked.add(row.dataset.id);
+    });
+    paintPickBar();
+  };
+  const move = (pointer) => {
+    if (Math.hypot(pointer.clientX - originX, pointer.clientY - originY) < 2) return;
+    moved = true;
+    paintBox(pointer);
+  };
+  const finish = (pointer) => {
+    if (listPanel.hasPointerCapture(pointer.pointerId)) listPanel.releasePointerCapture(pointer.pointerId);
+    pickBox.hidden = true;
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", finish);
+    window.removeEventListener("pointercancel", finish);
+    if (moved) library.dataset.marquee = "1";
+  };
+  listPanel.setPointerCapture(event.pointerId);
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", finish);
+  window.addEventListener("pointercancel", finish);
+});
+
+document.querySelector("#zoom-out").addEventListener("click", () => setZoom(zoom - 1));
+document.querySelector("#zoom-in").addEventListener("click", () => setZoom(zoom + 1));
+
+document.querySelector("#pick-start").addEventListener("click", () => {
+  picking = true;
+  picked.clear();
+  clearEdit();
+  renderList();
+});
+
+document.querySelector("#pick-cancel").addEventListener("click", () => {
+  picking = false;
+  picked.clear();
+  renderList();
+});
+
+document.querySelector("#pick-delete").addEventListener("click", () => {
+  if (!picked.size) return;
+  askDelete([...picked]);
 });
 
 document.querySelector("#confirm-cancel").addEventListener("click", () => {
@@ -1691,15 +1910,9 @@ document.querySelector("#confirm-cancel").addEventListener("click", () => {
 });
 
 document.querySelector("#confirm-delete").addEventListener("click", () => {
-  if (skipDeleteAsk.checked) {
-    try {
-      localStorage.setItem(deleteQuietKey, String(Date.now() + deleteQuietFor));
-    } catch {
-      // The warning still closes for this delete.
-    }
-  }
   confirm.classList.remove("is-on");
-  removeSelected();
+  removePhotos(pendingDelete);
+  pendingDelete = [];
 });
 
 const mute = document.querySelector("#mute");

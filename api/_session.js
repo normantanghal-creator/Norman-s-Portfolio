@@ -29,7 +29,7 @@ export async function verifyGoogle(credential) {
   if (payload.email_verified !== true || !allowedEmails().includes(email)) return null;
   return {
     email,
-    name: String(payload.given_name || payload.name || "").slice(0, 80),
+    name: String(payload.name || payload.given_name || "").slice(0, 80),
     picture: String(payload.picture || "").slice(0, 500),
   };
 }
