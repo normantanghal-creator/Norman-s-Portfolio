@@ -342,12 +342,12 @@ function paintTakeover(scrollY) {
     card.style.zIndex = String(index + 1);
     const progress =
       index === 0 ? 1 : Math.min(1, Math.max(0, (local - (index - 1) * segment) / segment));
-    const motion = index === 0 ? 1 : holdMotion(progress, phone ? 0 : 0.46);
+    const motion = index === 0 ? 1 : holdMotion(progress, 0);
     const offset = index === 0 ? 0 : (1 - motion) * (takeoverPin.offsetHeight + 8);
     card.style.transform = `translate3d(0, ${offset}px, 0)`;
 
     const next = index < last ? Math.min(1, Math.max(0, (local - index * segment) / segment)) : 0;
-    const nextMotion = index < last ? holdMotion(next, phone ? 0 : 0.46) : 0;
+    const nextMotion = index < last ? holdMotion(next, 0) : 0;
     let textOpacity = index === 0 ? 1 : motion < 0.4 ? 0 : Math.min(1, (motion - 0.4) / 0.45);
     if (phone) textOpacity = motion >= 0.98 && nextMotion < 0.08 ? 1 : 0;
     else if (index < last) {

@@ -679,7 +679,7 @@ html[data-theme="oled"] .btn-dark {
 .takeover {
   position: relative;
   --take-steps: 2;
-  height: calc(100vh + var(--take-steps) * 160vh);
+  height: calc(100vh + var(--take-steps) * 30vh);
 }
 
 .takeover-pin {
@@ -1580,11 +1580,32 @@ html:has(body.plain) {
   gap: 12px;
 }
 
+.login-back {
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  margin: -6px 0 4px -8px;
+  border-radius: 999px;
+  color: inherit;
+}
+
+.login-back:hover {
+  background: var(--bg-3);
+}
+
 .login h1 {
   margin: 0 0 8px;
   font-family: var(--heading);
   font-size: 32px;
   letter-spacing: -0.04em;
+}
+
+.login input[hidden],
+.login .enter[hidden],
+.login .bypass[hidden] {
+  display: none;
 }
 
 .login input,
