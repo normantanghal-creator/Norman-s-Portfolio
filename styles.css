@@ -679,7 +679,7 @@ html[data-theme="oled"] .btn-dark {
 .takeover {
   position: relative;
   --take-steps: 2;
-  height: calc(100vh + var(--take-steps) * 80vh);
+  height: calc(100vh + var(--take-steps) * 120vh);
 }
 
 .takeover-pin {
@@ -1290,9 +1290,23 @@ html[data-theme="dark"] .viewer {
   }
 
   #selected > h2,
+  #services > h2,
   .takeover-title,
   .about h2 {
     text-align: center;
+  }
+
+  .service-row article {
+    text-align: center;
+  }
+
+  .about-track {
+    height: auto;
+  }
+
+  .about-pin {
+    position: static;
+    height: auto;
   }
 
   .about-copy {
@@ -1301,13 +1315,40 @@ html[data-theme="dark"] .viewer {
     letter-spacing: -1.2px;
   }
 
+  .takeover {
+    height: auto;
+  }
+
+  .takeover-pin {
+    position: relative;
+    top: auto;
+    height: auto;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .takeover-window {
+    height: 58vh;
+    flex: none;
+  }
+
   .take-photo {
     height: 42vh;
+    width: 100%;
   }
 
   .take-card {
     grid-template-columns: 1fr;
-    align-content: center;
+    align-content: end;
+    justify-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .take-copy,
+  .take-card p {
+    text-align: center;
+    max-width: 34ch;
   }
 
   .take-card h3 {
@@ -4557,6 +4598,10 @@ body:has(.gear-soon) #smooth {
 
   .nav {
     position: relative;
+  }
+
+  .takeover-pin {
+    top: 0;
   }
 
   .saipan {

@@ -300,7 +300,7 @@ const takeoverPin = document.querySelector(".takeover-pin");
 function holdMotion(progress, hold = 0.46) {
   if (progress <= hold) return 0;
   const t = (progress - hold) / (1 - hold);
-  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  return t;
 }
 
 function stackRange() {
@@ -332,6 +332,39 @@ function paintTakeover(scrollY) {
   }
   takeover.classList.remove("is-still");
   const phone = onPhone();
+  const frame = takeover.querySelector(".takeover-window");
+  const cover = frame ? frame.offsetHeight : takeoverPin.offsetHeight;
+  const last = takeCards.length - 1;
+  const paintCards = (progressFor) => {
+    takeCards.forEach((card, index) => {
+      card.style.zIndex = String(index + 1);
+      const progress = progressFor(index);
+      const motion = index === 0 ? 1 : holdMotion(progress, 0);
+      const offset = index === 0 ? 0 : (1 - motion) * cover;
+      card.style.transform = `translate3d(0, ${offset}px, 0)`;
+      const next = index < last ? progressFor(index + 1) : 0;
+      const nextMotion = index < last ? holdMotion(next, 0) : 0;
+      let textOpacity = index === 0 ? 1 : motion < 0.4 ? 0 : Math.min(1, (motion - 0.4) / 0.45);
+      if (phone) textOpacity = motion >= 0.98 && nextMotion < 0.08 ? 1 : 0;
+      else if (index < last) {
+        const fadeOut = nextMotion === 0 ? 1 : Math.max(0, 1 - nextMotion / 0.35);
+        textOpacity *= fadeOut;
+      }
+      card.querySelectorAll("h3, p").forEach((line) => {
+        line.style.opacity = String(textOpacity);
+      });
+    });
+  };
+  if (phone) {
+    takeoverPin.style.transform = "";
+    const top = layoutTop(takeover);
+    const enter = top - window.innerHeight * 0.9;
+    const arrive = top - pinStick();
+    const span = Math.min(1, Math.max(0, (scrollY - enter) / Math.max(1, arrive - enter)));
+    const steps = Math.max(1, takeCards.length - 1);
+    paintCards((index) => (index === 0 ? 1 : Math.min(1, Math.max(0, span * steps - (index - 1)))));
+    return;
+  }
   const range = stackRange();
   const stick = pinStick();
   if (!range) return;
@@ -342,27 +375,9 @@ function paintTakeover(scrollY) {
   takeoverPin.style.transform = `translate3d(0, ${pinned}px, 0)`;
 
   const segment = travel / Math.max(1, takeCards.length - 1);
-  const last = takeCards.length - 1;
-  takeCards.forEach((card, index) => {
-    card.style.zIndex = String(index + 1);
-    const progress =
-      index === 0 ? 1 : Math.min(1, Math.max(0, (local - (index - 1) * segment) / segment));
-    const motion = index === 0 ? 1 : holdMotion(progress, 0);
-    const offset = index === 0 ? 0 : (1 - motion) * (takeoverPin.offsetHeight + 8);
-    card.style.transform = `translate3d(0, ${offset}px, 0)`;
-
-    const next = index < last ? Math.min(1, Math.max(0, (local - index * segment) / segment)) : 0;
-    const nextMotion = index < last ? holdMotion(next, 0) : 0;
-    let textOpacity = index === 0 ? 1 : motion < 0.4 ? 0 : Math.min(1, (motion - 0.4) / 0.45);
-    if (phone) textOpacity = motion >= 0.98 && nextMotion < 0.08 ? 1 : 0;
-    else if (index < last) {
-      const fadeOut = nextMotion === 0 ? 1 : Math.max(0, 1 - nextMotion / 0.35);
-      textOpacity *= fadeOut;
-    }
-    card.querySelectorAll("h3, p").forEach((line) => {
-      line.style.opacity = String(textOpacity);
-    });
-  });
+  paintCards((index) => (
+    index === 0 ? 1 : Math.min(1, Math.max(0, (local - (index - 1) * segment) / segment))
+  ));
 }
 
 function paintAbout(scrollY) {
@@ -371,12 +386,20 @@ function paintAbout(scrollY) {
   if (!aboutTrack || !aboutPin || aboutWords.length === 0) return;
   const stick = pinStick();
   const top = layoutTop(aboutTrack);
-  const local = scrollY - (top - stick);
-  const travel = Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight);
-  const pinned = Math.min(travel, Math.max(0, local));
-  aboutPin.style.transform = `translate3d(0, ${pinned}px, 0)`;
+  let span;
+  if (onPhone()) {
+    aboutPin.style.transform = "";
+    const enter = top - window.innerHeight * 0.92;
+    const arrive = top - stick - 12;
+    span = Math.min(1, Math.max(0, (scrollY - enter) / Math.max(1, arrive - enter)));
+  } else {
+    const local = scrollY - (top - stick);
+    const travel = Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight);
+    const pinned = Math.min(travel, Math.max(0, local));
+    aboutPin.style.transform = `translate3d(0, ${pinned}px, 0)`;
+    span = Math.min(1, Math.max(0, pinned / travel));
+  }
 
-  const span = Math.min(1, Math.max(0, pinned / travel));
   const effect = Math.min(1, Math.max(0, (span - 0.14) / 0.72));
   const stepped = Math.min(aboutWords.length, Math.ceil((effect * aboutWords.length) / 5) * 5);
   aboutWords.forEach((word, index) => {
