@@ -679,7 +679,7 @@ html[data-theme="oled"] .btn-dark {
 .takeover {
   position: relative;
   --take-steps: 2;
-  height: calc(100vh + var(--take-steps) * 30vh);
+  height: calc(100vh + var(--take-steps) * 80vh);
 }
 
 .takeover-pin {
@@ -1284,7 +1284,15 @@ html[data-theme="dark"] .viewer {
 
   .about {
     grid-template-columns: 1fr;
+    justify-items: center;
     row-gap: 16px;
+    text-align: center;
+  }
+
+  #selected > h2,
+  .takeover-title,
+  .about h2 {
+    text-align: center;
   }
 
   .about-copy {
@@ -4470,47 +4478,6 @@ body:has(.gear-soon) #smooth {
 
   #smooth {
     transform: none !important;
-  }
-
-  .about-track,
-  .takeover {
-    height: auto;
-  }
-
-  .about-pin,
-  .takeover-pin {
-    position: static;
-    height: auto;
-    transform: none !important;
-  }
-
-  .about-copy,
-  .about-copy span {
-    color: var(--about-on);
-  }
-
-  .takeover-window {
-    height: auto;
-    overflow: visible;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-
-  .take-card,
-  .take-card:first-child {
-    position: relative;
-    inset: auto;
-    transform: none !important;
-  }
-
-  .take-card h3,
-  .take-card p {
-    opacity: 1 !important;
-  }
-
-  .take-photo {
-    height: 42vh;
   }
 
   .nav-inner {

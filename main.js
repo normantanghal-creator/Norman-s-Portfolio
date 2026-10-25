@@ -246,6 +246,11 @@ function onPhone() {
   return phoneScroll.matches;
 }
 
+function pinStick() {
+  if (window.matchMedia("(max-width: 700px)").matches) return 0;
+  return onPhone() ? navHeight() : 64;
+}
+
 function navHeight() {
   const nav = document.querySelector(".nav");
   return nav ? nav.offsetHeight : 0;
@@ -295,15 +300,15 @@ const takeoverPin = document.querySelector(".takeover-pin");
 function holdMotion(progress, hold = 0.46) {
   if (progress <= hold) return 0;
   const t = (progress - hold) / (1 - hold);
-  return 1 - (1 - t) ** 3;
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
 function stackRange() {
   if (!takeover || !takeoverPin) return null;
   const cards = takeover.querySelectorAll(".take-card").length;
-  if (!cards || cards < 2 || onPhone()) return null;
+  if (!cards || cards < 2) return null;
   if (takeover.style.height) takeover.style.height = "";
-  const stick = onPhone() ? navHeight() : 64;
+  const stick = pinStick();
   const top = layoutTop(takeover);
   const travel = Math.max(0, takeover.offsetHeight - takeoverPin.offsetHeight);
   if (travel < 40) return null;
@@ -313,7 +318,7 @@ function stackRange() {
 function paintTakeover(scrollY) {
   const takeCards = takeover ? [...takeover.querySelectorAll(".take-card")] : [];
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
-  if (onPhone() || takeCards.length < 2) {
+  if (takeCards.length < 2) {
     if (takeover.style.height) takeover.style.height = "";
     takeover.classList.add("is-still");
     takeoverPin.style.transform = "";
@@ -328,7 +333,7 @@ function paintTakeover(scrollY) {
   takeover.classList.remove("is-still");
   const phone = onPhone();
   const range = stackRange();
-  const stick = phone ? navHeight() : 64;
+  const stick = pinStick();
   if (!range) return;
   const top = layoutTop(takeover);
   const local = scrollY - (top - stick);
@@ -364,11 +369,7 @@ function paintAbout(scrollY) {
   const aboutTrack = document.querySelector(".about-track");
   const aboutPin = document.querySelector(".about-pin");
   if (!aboutTrack || !aboutPin || aboutWords.length === 0) return;
-  if (onPhone()) {
-    aboutPin.style.transform = "";
-    return;
-  }
-  const stick = onPhone() ? navHeight() : 64;
+  const stick = pinStick();
   const top = layoutTop(aboutTrack);
   const local = scrollY - (top - stick);
   const travel = Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight);
@@ -397,17 +398,28 @@ if (root) {
     return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
   }
 
+  function aboutRange() {
+    const aboutTrack = document.querySelector(".about-track");
+    const aboutPin = document.querySelector(".about-pin");
+    if (!aboutTrack || !aboutPin) return null;
+    const stick = pinStick();
+    const top = layoutTop(aboutTrack);
+    const travel = Math.max(0, aboutTrack.offsetHeight - aboutPin.offsetHeight);
+    if (travel < 40) return null;
+    return { start: top - stick, end: top - stick + travel };
+  }
+
   function glideY(from, to, t) {
-    const range = stackRange();
-    let cut = to;
-    let skip = 0;
-    if (range && from < range.end && to > range.end) {
-      cut = Math.max(from, range.start);
-      skip = range.end - cut;
-    }
-    const traveled = Math.max(0, to - from - skip) * easeInOut(t);
-    if (from + traveled <= cut) return from + traveled;
-    return from + traveled + skip;
+    const jumps = [aboutRange(), stackRange()]
+      .filter((range) => range && from < range.end && to > range.end)
+      .map((range) => ({ cut: Math.max(from, range.start), end: range.end }))
+      .sort((a, b) => a.cut - b.cut);
+    const skip = jumps.reduce((sum, jump) => sum + (jump.end - jump.cut), 0);
+    let y = from + Math.max(0, to - from - skip) * easeInOut(t);
+    jumps.forEach((jump) => {
+      if (y > jump.cut) y += jump.end - jump.cut;
+    });
+    return y;
   }
 
   function cancelGlide() {
