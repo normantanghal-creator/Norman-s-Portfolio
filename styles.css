@@ -368,6 +368,15 @@ details.menu > div::before {
   letter-spacing: -0.2px;
 }
 
+.nav-links a.contact-btn[aria-current="page"],
+.nav-links a.contact-btn[aria-current="page"]:hover {
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 24px;
+  padding: 8px 24px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--text) 22%, transparent), 0 0 18px color-mix(in srgb, var(--text) 42%, transparent);
+}
+
 .page {
   max-width: 1440px;
   margin: 0 auto;
@@ -778,7 +787,9 @@ html[data-theme="oled"] .btn-dark {
 
 .take-photo {
   position: relative;
-  height: min(58vh, 540px);
+  height: 100%;
+  align-self: stretch;
+  min-height: 0;
   border-radius: 28px;
   clip-path: inset(0 round 28px);
   overflow: hidden;
@@ -831,6 +842,7 @@ html[data-theme="oled"] .btn-dark {
   z-index: 1;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
   object-fit: cover;
   display: block;
 }
@@ -4057,6 +4069,13 @@ html[data-theme="oled"] .contact-btn {
   box-shadow: inset 0 0 0 1px #b0b0b0;
 }
 
+html[data-theme="oled"] .nav-links a.contact-btn[aria-current="page"],
+html[data-theme="oled"] .nav-links a.contact-btn[aria-current="page"]:hover {
+  background: #e8e8e8;
+  color: #000;
+  box-shadow: 0 0 0 4px rgba(232, 232, 232, 0.28), 0 0 18px rgba(232, 232, 232, 0.55);
+}
+
 html[data-theme="oled"] .pill-menu > summary,
 html[data-theme="oled"] .viewer-arrow,
 html[data-theme="oled"] .service-row article,
@@ -4611,6 +4630,15 @@ body:has(.gear-soon) #smooth {
 
   .nav-links a[aria-current="page"]:hover {
     color: inherit;
+  }
+
+  .nav-links a.contact-btn[aria-current="page"],
+  .nav-links a.contact-btn[aria-current="page"]:hover {
+    padding: 6px 10px;
+    background: var(--text);
+    color: var(--bg);
+    border-radius: 24px;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--text) 22%, transparent), 0 0 18px color-mix(in srgb, var(--text) 42%, transparent);
   }
 
   body:has(.gear-soon) .stage-scroll {

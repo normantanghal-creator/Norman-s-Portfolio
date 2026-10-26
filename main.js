@@ -277,13 +277,18 @@ function syncNavSpace() {
   }
 }
 
+function hashId(href) {
+  const hash = String(href || "").split("#")[1];
+  return hash || "";
+}
+
 function paintNav(scrollY) {
-  const links = [...document.querySelectorAll(".nav-links a[href^='#']:not(.contact-btn)")];
+  const links = [...document.querySelectorAll(".nav-links a[href*='#']")];
   if (!links.length) return;
   const sections = links
     .map((link) => {
-      const id = link.getAttribute("href").slice(1);
-      const element = document.getElementById(id);
+      const id = hashId(link.getAttribute("href"));
+      const element = id ? document.getElementById(id) : null;
       return element ? { id, top: layoutTop(element) } : null;
     })
     .filter(Boolean)
@@ -294,9 +299,9 @@ function paintNav(scrollY) {
     if (section.top - lead <= scrollY) currentId = section.id;
   });
   links.forEach((link) => {
-    const id = link.getAttribute("href").slice(1);
+    const id = hashId(link.getAttribute("href"));
     if (id && id === currentId) link.setAttribute("aria-current", "page");
-    else link.removeAttribute("aria-current");
+    else if (link.getAttribute("href").includes("#")) link.removeAttribute("aria-current");
   });
 }
 
