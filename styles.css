@@ -153,6 +153,13 @@ html.is-native-scroll #smooth {
   transform: none !important;
 }
 
+html.is-native-scroll .about-pin,
+html.is-native-scroll .takeover-pin {
+  position: sticky;
+  top: 72px;
+  transform: none !important;
+}
+
 .nav-inner {
   width: 100%;
   padding: 0 40px;
@@ -1339,15 +1346,16 @@ html[data-theme="dark"] .viewer {
   }
 
   .takeover {
-    height: auto;
+    height: calc(100svh + var(--take-steps) * 80svh);
   }
 
   .takeover-pin {
-    position: relative;
-    top: auto;
-    height: auto;
+    position: sticky;
+    top: var(--nav-space, 0px);
+    height: 100svh;
     justify-content: center;
     gap: 10px;
+    transform: none !important;
   }
 
   .takeover-window {

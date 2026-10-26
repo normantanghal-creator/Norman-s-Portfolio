@@ -368,16 +368,6 @@ function paintTakeover(scrollY) {
       });
     });
   };
-  if (phone) {
-    takeoverPin.style.transform = "";
-    const top = layoutTop(takeover);
-    const enter = top - window.innerHeight * 0.9;
-    const arrive = top - pinStick();
-    const span = Math.min(1, Math.max(0, (scrollY - enter) / Math.max(1, arrive - enter)));
-    const steps = Math.max(1, takeCards.length - 1);
-    paintCards((index) => (index === 0 ? 1 : Math.min(1, Math.max(0, span * steps - (index - 1)))));
-    return;
-  }
   const range = stackRange();
   const stick = pinStick();
   if (!range) return;
@@ -385,7 +375,7 @@ function paintTakeover(scrollY) {
   const local = scrollY - (top - stick);
   const travel = Math.max(1, takeover.offsetHeight - takeoverPin.offsetHeight);
   const pinned = Math.min(travel, Math.max(0, local));
-  takeoverPin.style.transform = `translate3d(0, ${pinned}px, 0)`;
+  takeoverPin.style.transform = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
 
   const segment = travel / Math.max(1, takeCards.length - 1);
   paintCards((index) => (
@@ -409,7 +399,7 @@ function paintAbout(scrollY) {
     const local = scrollY - (top - stick);
     const travel = Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight);
     const pinned = Math.min(travel, Math.max(0, local));
-    aboutPin.style.transform = `translate3d(0, ${pinned}px, 0)`;
+    aboutPin.style.transform = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
     span = Math.min(1, Math.max(0, pinned / travel));
   }
 
