@@ -246,6 +246,14 @@ function onPhone() {
   return phoneScroll.matches;
 }
 
+function onMac() {
+  return /Macintosh|Mac OS X/.test(navigator.userAgent);
+}
+
+function usesNativeScroll() {
+  return onPhone() || onMac();
+}
+
 function pinStick() {
   if (window.matchMedia("(max-width: 700px)").matches) return 0;
   return onPhone() ? navHeight() : 64;
@@ -408,6 +416,8 @@ function paintAbout(scrollY) {
 }
 
 if (root) {
+  const syncNativeClass = () => document.documentElement.classList.toggle("is-native-scroll", onMac() && !onPhone());
+  syncNativeClass();
   let target = 0;
   let current = 0;
   let heading = null;
@@ -447,22 +457,22 @@ if (root) {
 
   function cancelGlide() {
     if (!glide) return;
-    if (!onPhone()) target = current;
+    if (!usesNativeScroll()) target = current;
     glide = null;
   }
 
   function goTo(element, offset) {
-    const phone = onPhone();
-    const gap = phone ? navHeight() + 12 : offset;
-    if (phone) syncNavSpace();
-    const top = phone ? Math.max(0, layoutTop(element) - gap) : clamp(layoutTop(element) - gap);
+    const native = usesNativeScroll();
+    const gap = onPhone() ? navHeight() + 12 : offset;
+    if (onPhone()) syncNavSpace();
+    const top = native ? Math.max(0, layoutTop(element) - gap) : clamp(layoutTop(element) - gap);
     if (element.id === "book") {
       heading = null;
-      glide = { element, offset: gap, from: phone ? window.scrollY : current, to: top, start: performance.now(), duration: 2000 };
+      glide = { element, offset: gap, from: native ? window.scrollY : current, to: top, start: performance.now(), duration: 2000 };
       return;
     }
     cancelGlide();
-    if (phone) {
+    if (native) {
       heading = { element, offset: gap };
       window.scrollTo(0, top);
       return;
@@ -474,7 +484,7 @@ if (root) {
   window.addEventListener(
     "wheel",
     (event) => {
-      if (onPhone()) {
+      if (usesNativeScroll()) {
         heading = null;
         cancelGlide();
         return;
@@ -492,7 +502,7 @@ if (root) {
   window.addEventListener(
     "touchstart",
     (event) => {
-      if (onPhone()) {
+      if (usesNativeScroll()) {
         heading = null;
         cancelGlide();
       }
@@ -503,7 +513,7 @@ if (root) {
   window.addEventListener(
     "touchmove",
     (event) => {
-      if (onPhone()) return;
+      if (usesNativeScroll()) return;
       if (lastTouch === null) return;
       const y = event.touches[0].clientY;
       heading = null;
@@ -519,7 +529,7 @@ if (root) {
   });
 
   window.addEventListener("keydown", (event) => {
-    if (onPhone()) {
+    if (usesNativeScroll()) {
       heading = null;
       cancelGlide();
       return;
@@ -559,6 +569,7 @@ if (root) {
   });
 
   window.addEventListener("resize", () => {
+    syncNativeClass();
     target = clamp(target);
   });
 
@@ -572,8 +583,8 @@ if (root) {
   }
 
   function frame() {
-    if (onPhone()) {
-      syncNavSpace();
+    if (usesNativeScroll()) {
+      if (onPhone()) syncNavSpace();
       if (glide) {
         glide.to = Math.max(0, layoutTop(glide.element) - glide.offset);
         const t = Math.min(1, (performance.now() - glide.start) / glide.duration);
@@ -609,8 +620,8 @@ if (root) {
     requestAnimationFrame(frame);
   }
 
-  if (onPhone()) {
-    syncNavSpace();
+  if (usesNativeScroll()) {
+    if (onPhone()) syncNavSpace();
     root.style.transform = "none";
   } else root.style.transform = `translate3d(0, ${-current}px, 0)`;
   paintAbout(current);

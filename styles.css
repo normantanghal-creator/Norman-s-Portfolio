@@ -130,6 +130,29 @@ img {
   padding-top: 8px;
 }
 
+html.is-native-scroll,
+html.is-native-scroll body {
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+html.is-native-scroll .stage-scroll {
+  position: relative;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  padding-top: 72px;
+}
+
+html.is-native-scroll #smooth {
+  transform: none !important;
+}
+
 .nav-inner {
   width: 100%;
   padding: 0 40px;
