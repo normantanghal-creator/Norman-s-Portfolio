@@ -133,8 +133,7 @@ img {
 html.is-native-scroll,
 html.is-native-scroll body {
   height: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 html.is-native-scroll .stage-scroll {
@@ -157,6 +156,7 @@ html.is-native-scroll .about-pin,
 html.is-native-scroll .takeover-pin {
   position: sticky;
   top: 72px;
+  height: calc(100vh - 72px);
   transform: none !important;
 }
 
