@@ -85,8 +85,10 @@ function paintFeatured(library) {
     demo.setAttribute("role", "img");
     demo.setAttribute("aria-label", photo.title || "Photograph");
     const img = document.createElement("img");
-    img.src = safeImage(photo.image);
     img.alt = "";
+    img.loading = "eager";
+    img.decoding = "async";
+    img.src = safeImage(photo.image);
     demo.appendChild(img);
     frame.appendChild(demo);
     const copy = document.createElement("div");
@@ -136,8 +138,10 @@ function paintTakeoverPhotos(library) {
     const frame = document.createElement("div");
     frame.className = "take-photo";
     const img = document.createElement("img");
-    img.src = safeImage(photo.image);
     img.alt = "";
+    img.loading = "eager";
+    img.decoding = "async";
+    img.src = safeImage(photo.image);
     frame.appendChild(img);
     article.append(copy, frame);
     windowEl.appendChild(article);
@@ -148,6 +152,7 @@ syncThemeButton();
 if (typeof loadLibrary === "function" && document.querySelector("#featured")) {
   fetchLibrary().then((remote) => {
     const library = remote || loadLibrary();
+    warmPhotos(library.photos);
     paintFeatured(library);
     paintTakeoverPhotos(library);
     paintHero(library);

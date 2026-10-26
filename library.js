@@ -69,6 +69,19 @@ function cleanPhoto(photo, index) {
   };
 }
 
+const warmedPhotos = [];
+
+function warmPhotos(list) {
+  (Array.isArray(list) ? list : []).forEach((photo) => {
+    const src = safeImage(photo && photo.image);
+    if (!src || warmedPhotos.some((img) => img.src === src)) return;
+    const img = new Image();
+    img.decoding = "async";
+    img.src = src;
+    warmedPhotos.push(img);
+  });
+}
+
 function loadLibrary() {
   try {
     const raw = localStorage.getItem(LIBRARY_KEY);

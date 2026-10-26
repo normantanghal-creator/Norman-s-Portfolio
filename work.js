@@ -59,8 +59,10 @@ if (covers && catBox && density) {
         const src = safeImage(photo.image);
         if (src) {
           const img = document.createElement("img");
-          img.src = src;
           img.alt = "";
+          img.loading = "eager";
+          img.decoding = "async";
+          img.src = src;
           frame.appendChild(img);
         }
         const meta = document.createElement("div");
@@ -146,6 +148,7 @@ if (covers && catBox && density) {
 
   fetchLibrary().then((remote) => {
     if (remote) library = remote;
+    warmPhotos(library.photos);
     renderCats();
     renderCovers();
   });
