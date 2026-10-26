@@ -377,7 +377,9 @@ function paintTakeover(scrollY) {
   const pinned = Math.min(travel, Math.max(0, local));
   takeoverPin.style.transform = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
 
-  const segment = travel / Math.max(1, takeCards.length - 1);
+  const dwell = phone ? 0 : Math.min(window.innerHeight * 0.6, travel * 0.45);
+  const motionTravel = Math.max(1, travel - dwell);
+  const segment = motionTravel / Math.max(1, takeCards.length - 1);
   paintCards((index) => (
     index === 0 ? 1 : Math.min(1, Math.max(0, (local - (index - 1) * segment) / segment))
   ));
