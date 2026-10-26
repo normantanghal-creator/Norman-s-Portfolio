@@ -709,7 +709,7 @@ html[data-theme="oled"] .btn-dark {
 .takeover {
   position: relative;
   --take-steps: 2;
-  height: calc(100vh + var(--take-steps) * 70vh + 60vh);
+  height: calc(100vh + var(--take-steps) * 100vh + 60vh);
 }
 
 .takeover-pin {
@@ -720,11 +720,13 @@ html[data-theme="oled"] .btn-dark {
   height: calc(100vh - 72px);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  justify-content: center;
+  gap: 40px;
 }
 
 .takeover-window {
-  height: 100%;
+  height: min(58vh, 520px);
+  flex: none;
   overflow: hidden;
   position: relative;
 }

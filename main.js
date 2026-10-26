@@ -313,7 +313,7 @@ const takeoverPin = document.querySelector(".takeover-pin");
 function holdMotion(progress, hold = 0.46) {
   if (progress <= hold) return 0;
   const t = (progress - hold) / (1 - hold);
-  return t;
+  return t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
 }
 
 function stackRange() {
