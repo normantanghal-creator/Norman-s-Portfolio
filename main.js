@@ -339,6 +339,8 @@ function paintTakeover(scrollY) {
   if (takeCards.length < 2) {
     if (takeover.style.height) takeover.style.height = "";
     takeover.classList.add("is-still");
+    const takeIndex = takeover.querySelector(".take-index");
+    if (takeIndex) takeIndex.hidden = true;
     takeoverPin.style.transform = "";
     takeCards.forEach((card) => {
       card.style.transform = "";
@@ -351,6 +353,20 @@ function paintTakeover(scrollY) {
   takeover.classList.remove("is-still");
   const phone = onPhone();
   const frame = takeover.querySelector(".takeover-window");
+  let takeIndex = takeover.querySelector(".take-index");
+  if (!takeIndex) {
+    takeIndex = document.createElement("div");
+    takeIndex.className = "take-index";
+    takeoverPin.appendChild(takeIndex);
+  } else if (takeIndex.parentElement !== takeoverPin) {
+    takeoverPin.appendChild(takeIndex);
+  }
+  takeIndex.setAttribute("aria-hidden", "true");
+  if (takeIndex.children.length !== takeCards.length) {
+    takeIndex.replaceChildren();
+    takeCards.forEach(() => takeIndex.appendChild(document.createElement("i")));
+  }
+  takeIndex.hidden = false;
   const cover = frame ? frame.offsetHeight : takeoverPin.offsetHeight;
   const last = takeCards.length - 1;
   const paintCards = (progressFor) => {
@@ -371,6 +387,12 @@ function paintTakeover(scrollY) {
       card.querySelectorAll("h3, p").forEach((line) => {
         line.style.opacity = String(textOpacity);
       });
+      const presence = index === 0 ? 1 - nextMotion : motion * (index === last ? 1 : 1 - nextMotion);
+      const tick = takeIndex.children[index];
+      if (tick) {
+        tick.style.width = `${10 + presence * 18}px`;
+        tick.style.opacity = String(0.4 + presence * 0.6);
+      }
     });
   };
   const range = stackRange();

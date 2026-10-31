@@ -735,9 +735,41 @@ html[data-theme="oled"] .btn-dark {
 
 .takeover-window {
   height: min(58vh, 520px);
+  width: calc(100% - 44px);
   flex: none;
   overflow: hidden;
   position: relative;
+}
+
+.take-index {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 28px;
+  pointer-events: none;
+}
+
+.take-index[hidden] {
+  display: none;
+}
+
+.take-index i {
+  display: block;
+  height: 2px;
+  width: 10px;
+  border-radius: 99px;
+  background: #0d0d0d;
+}
+
+html[data-theme="dark"] .take-index i,
+html[data-theme="oled"] .take-index i {
+  background: #fff;
 }
 
 .take-card {
