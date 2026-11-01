@@ -24,15 +24,15 @@ const seedLibrary = {
   ],
 };
 
-const SERVICES_MIN = 3;
-const SERVICES_MAX = 8;
+const SERVICES_MIN = 0;
+const SERVICES_MAX = 6;
 
 function cleanServices(list) {
-  const services = (Array.isArray(list) ? list : [])
+  if (!Array.isArray(list)) return structuredClone(seedLibrary.services);
+  return list
     .slice(0, SERVICES_MAX)
     .map((item) => ({ title: safeText(item && item.title, 60), text: safeText(item && item.text, 280) }))
     .filter((item) => item.title);
-  return services.length >= SERVICES_MIN ? services : structuredClone(seedLibrary.services);
 }
 
 function safeText(value, max) {

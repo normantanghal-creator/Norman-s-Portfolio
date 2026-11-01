@@ -214,12 +214,20 @@ function paintAboutText(text) {
 }
 
 function paintServices(services) {
-  const serviceRows = { 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3], 7: [4, 3], 8: [4, 4] };
+  const serviceRows = { 1: [1], 2: [2], 3: [3], 4: [2, 2], 5: [3, 2], 6: [3, 3] };
+  const section = document.querySelector("#services");
   const row = document.querySelector(".service-row");
-  if (!row || !serviceRows[services.length]) return;
-  const spans = serviceRows[services.length].flatMap((count) => Array(count).fill(12 / count));
+  const list = Array.isArray(services) ? services : [];
+  if (!section || !row) return;
+  if (!serviceRows[list.length]) {
+    section.hidden = true;
+    row.replaceChildren();
+    return;
+  }
+  section.hidden = false;
+  const spans = serviceRows[list.length].flatMap((count) => Array(count).fill(12 / count));
   row.replaceChildren();
-  services.forEach((service, index) => {
+  list.forEach((service, index) => {
     const article = document.createElement("article");
     article.style.setProperty("--span", String(spans[index]));
     const title = document.createElement("h3");

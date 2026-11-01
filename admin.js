@@ -1582,7 +1582,7 @@ function deleteCategory(name) {
 
 const siteServices = document.querySelector("#site-services");
 const siteAdd = document.querySelector("#site-add");
-const siteLayouts = { 3: "one row of 3", 4: "2 on top, 2 below", 5: "3 on top, 2 below", 6: "two rows of 3", 7: "4 on top, 3 below", 8: "two rows of 4" };
+const siteLayouts = { 0: "hidden on the home page", 1: "one across", 2: "2 across", 3: "one row of 3", 4: "2 on top, 2 below", 5: "3 on top, 2 below", 6: "two rows of 3" };
 let siteDraft = [];
 let bannerPreview = "";
 let bannerRemoved = false;
@@ -1631,8 +1631,9 @@ function paintSiteServices() {
     number.textContent = String(index + 1);
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "cat-delete";
-    remove.textContent = "Remove";
+    remove.className = "site-step";
+    remove.textContent = "−";
+    remove.setAttribute("aria-label", "Remove this service");
     remove.disabled = siteDraft.length <= SERVICES_MIN;
     remove.addEventListener("click", () => {
       if (siteDraft.length <= SERVICES_MIN) return;
@@ -1664,7 +1665,7 @@ function paintSiteServices() {
     siteServices.appendChild(card);
   });
   document.querySelector("#site-count").textContent = `${siteDraft.length} of ${SERVICES_MAX} · ${siteLayouts[siteDraft.length]}`;
-  siteAdd.hidden = siteDraft.length >= SERVICES_MAX;
+  siteAdd.disabled = siteDraft.length >= SERVICES_MAX;
 }
 
 siteAdd.addEventListener("click", () => {

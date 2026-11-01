@@ -43,7 +43,7 @@ export function cleanLibrary(input) {
     });
   });
   const services = (Array.isArray(input.services) ? input.services : [])
-    .slice(0, 8)
+    .slice(0, 6)
     .map((item) => ({ title: text(item && item.title, 60), text: text(item && item.text, 280) }))
     .filter((item) => item.title);
   const library = {
@@ -55,6 +55,6 @@ export function cleanLibrary(input) {
     heroImage: keyFromPublicUrl(input.heroImage) ? String(input.heroImage) : "",
     heroStyle: input.heroStyle === "solid" ? "solid" : "overlay",
   };
-  if (services.length >= 3) library.services = services;
+  if (Array.isArray(input.services)) library.services = services;
   return library;
 }

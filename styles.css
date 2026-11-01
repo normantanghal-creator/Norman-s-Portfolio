@@ -577,6 +577,10 @@ html[data-theme="oled"] .btn-dark {
   padding: 48px 0 16px;
 }
 
+#services[hidden] {
+  display: none;
+}
+
 .block h2,
 .about h2,
 .takeover-title {
@@ -3287,9 +3291,33 @@ html[data-theme="dark"] #category-list li {
   letter-spacing: -0.03em;
 }
 
+.site-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .site-head small {
   color: #6d6d6d;
   font-size: 13px;
+}
+
+.site-step {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid #8a8a8a;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.site-step:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .site-services {
