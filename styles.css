@@ -1328,7 +1328,7 @@ html[data-theme="dark"] .viewer {
 
   .page {
     width: 100%;
-    padding: 0 16px 24px;
+    padding: 0 16px 80svh;
     box-sizing: border-box;
   }
 
@@ -1406,7 +1406,7 @@ html[data-theme="dark"] .viewer {
   }
 
   .takeover {
-    height: calc(100svh + var(--take-steps) * 72svh + 16svh);
+    height: calc(100svh + (var(--take-steps) + 1) * 72svh);
   }
 
   .takeover-pin {
@@ -4619,6 +4619,7 @@ body:has(.gear-soon) #smooth {
   html:has(.stage-scroll) body {
     height: auto;
     overflow: visible;
+    overflow-anchor: none;
     overscroll-behavior-y: none;
   }
 
