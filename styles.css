@@ -1406,13 +1406,13 @@ html[data-theme="dark"] .viewer {
   }
 
   .takeover {
-    height: calc(100svh + 40svh);
+    height: calc(100svh + var(--take-steps) * 72svh + 16svh);
   }
 
   .takeover-pin {
     position: sticky;
     top: var(--nav-space, 0px);
-    height: 100svh;
+    height: calc(100svh - var(--nav-space, 0px));
     justify-content: center;
     gap: 10px;
     transform: none !important;
@@ -1459,6 +1459,10 @@ html[data-theme="dark"] .viewer {
     font-size: 40px;
     line-height: 44px;
     letter-spacing: -1.6px;
+  }
+
+  .book {
+    padding-top: 32px;
   }
 
   .covers,
@@ -4614,8 +4618,7 @@ body:has(.gear-soon) #smooth {
   html:has(.stage-scroll),
   html:has(.stage-scroll) body {
     height: auto;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
     overscroll-behavior-y: none;
   }
 
@@ -4733,6 +4736,7 @@ body:has(.gear-soon) #smooth {
 
   .takeover-pin {
     top: 0;
+    height: 100svh;
   }
 
   .saipan {
