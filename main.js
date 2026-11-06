@@ -89,6 +89,7 @@ function paintFeatured(library) {
     img.loading = "eager";
     img.decoding = "async";
     img.src = safeImage(photo.image);
+    markPhoto(img);
     demo.appendChild(img);
     frame.appendChild(demo);
     const copy = document.createElement("div");
@@ -142,25 +143,71 @@ function paintTakeoverPhotos(library) {
     img.loading = "eager";
     img.decoding = "async";
     img.src = safeImage(photo.image);
+    markPhoto(img);
     frame.appendChild(img);
     article.append(copy, frame);
     windowEl.appendChild(article);
   });
 }
 
+function markPhoto(img) {
+  const ready = () => img.classList.add("is-ready");
+  if (img.complete) ready();
+  else {
+    img.addEventListener("load", ready, { once: true });
+    img.addEventListener("error", ready, { once: true });
+  }
+}
+
+async function revealHome(library) {
+  paintFeatured(library);
+  paintTakeoverPhotos(library);
+  paintHero(library);
+  paintServices(library.services);
+  paintAboutText(library.about);
+  await Promise.all([...document.querySelectorAll("#featured img, .take-photo img")].map((img) => {
+    if (img.complete) return Promise.resolve();
+    return new Promise((resolve) => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    });
+  }));
+  document.querySelectorAll(".is-loading").forEach((element) => element.classList.remove("is-loading"));
+  paintDemos();
+}
+
 syncThemeButton();
 if (typeof loadLibrary === "function" && document.querySelector("#featured")) {
-  fetchLibrary().then((remote) => {
-    const library = remote || loadLibrary();
-    warmPhotos(library.photos);
-    paintFeatured(library);
-    paintTakeoverPhotos(library);
-    paintHero(library);
-    paintServices(library.services);
-    paintAboutText(library.about);
-    document.querySelectorAll(".is-loading").forEach((element) => element.classList.remove("is-loading"));
-    paintDemos();
-  });
+  const cached = loadLibrary();
+  let generation = 0;
+  let shown = "";
+  let shownAbout = "";
+  const reveal = async (library) => {
+    const ticket = ++generation;
+    const sources = homePhotoSources(library);
+    const key = sources.join("\n");
+    await warmPhotos(sources);
+    if (ticket !== generation) return;
+    if (key && key === shown) {
+      paintHero(library);
+      paintServices(library.services);
+      if (library.about !== shownAbout) {
+        paintAboutText(library.about);
+        shownAbout = library.about;
+      }
+      return;
+    }
+    await revealHome(library);
+    if (ticket !== generation) return;
+    shown = key;
+    shownAbout = library.about;
+  };
+  if (homePhotoSources(cached).length) reveal(cached);
+  fetchLibrary().then((remote) => reveal(remote || cached));
+} else if (typeof fetchLibrary === "function" && typeof loadLibrary === "function") {
+  const cached = loadLibrary();
+  warmPhotos(homePhotoSources(cached));
+  fetchLibrary().then((remote) => warmPhotos(homePhotoSources(remote || cached)));
 }
 paintDemos();
 

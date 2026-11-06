@@ -633,6 +633,11 @@ html[data-theme="oled"] .btn-dark {
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0;
+}
+
+.card .frame .demo img.is-ready {
+  opacity: 1;
 }
 
 .card h3 {
@@ -881,6 +886,11 @@ html[data-theme="oled"] .take-index i {
   border-radius: inherit;
   object-fit: cover;
   display: block;
+  opacity: 0;
+}
+
+.take-photo img.is-ready {
+  opacity: 1;
 }
 
 .take-card p {

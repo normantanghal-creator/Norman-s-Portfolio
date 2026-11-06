@@ -71,15 +71,52 @@ function cleanPhoto(photo, index) {
 
 const warmedPhotos = [];
 
+function homePhotoSources(library) {
+  if (!library || !Array.isArray(library.photos)) return [];
+  const sources = [];
+  const add = (src) => {
+    const clean = safeImage(src);
+    if (clean && !sources.includes(clean)) sources.push(clean);
+  };
+  add(library.heroImage);
+  library.photos
+    .filter((photo) => photo.starred)
+    .sort((a, b) => (a.starredAt || 0) - (b.starredAt || 0))
+    .slice(0, 4)
+    .forEach((photo) => add(photo.image));
+  library.photos
+    .filter((photo) => photo.scroll)
+    .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0))
+    .slice(0, 6)
+    .forEach((photo) => add(photo.image));
+  return sources;
+}
+
 function warmPhotos(list) {
-  (Array.isArray(list) ? list : []).forEach((photo) => {
-    const src = safeImage(photo && photo.image);
-    if (!src || warmedPhotos.some((img) => img.src === src)) return;
-    const img = new Image();
-    img.decoding = "async";
-    img.src = src;
-    warmedPhotos.push(img);
+  const sources = [];
+  (Array.isArray(list) ? list : []).forEach((item) => {
+    const src = safeImage(typeof item === "string" ? item : item && item.image);
+    if (src && !sources.includes(src)) sources.push(src);
   });
+  return Promise.all(sources.map((src) => {
+    let img = warmedPhotos.find((item) => item.dataset.warm === src);
+    if (!img) {
+      img = new Image();
+      img.dataset.warm = src;
+      img.decoding = "async";
+      img.src = src;
+      warmedPhotos.push(img);
+    }
+    if (img.complete) return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+    return new Promise((resolve) => {
+      const finish = () => resolve();
+      img.addEventListener("load", () => {
+        if (img.decode) img.decode().then(finish, finish);
+        else finish();
+      }, { once: true });
+      img.addEventListener("error", finish, { once: true });
+    });
+  }));
 }
 
 function loadLibrary() {
