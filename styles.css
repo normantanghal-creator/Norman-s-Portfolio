@@ -4767,3 +4767,78 @@ body:has(.gear-soon) #smooth {
     justify-content: center;
   }
 }
+
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .hero.is-overlay {
+    height: calc(100svh - 96px);
+    min-height: 0;
+  }
+
+  .hero.is-solid .hero-photo {
+    height: min(62svh, 680px);
+  }
+
+  .nav-toggle {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav.is-open .nav-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 16px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 0 12px;
+    overflow: visible;
+  }
+
+  .nav.is-open .nav-links .contact-btn {
+    flex: none;
+    width: auto;
+  }
+
+  .nav.is-open .nav-links .theme {
+    position: static;
+  }
+
+  .nav.is-open .menu > div,
+  .nav.is-open .menu[open] > div {
+    position: static;
+    left: auto;
+    min-width: 0;
+    padding: 8px 0 0 12px;
+    transform: none;
+    background: transparent;
+  }
+
+  .nav.is-open .menu > div::before {
+    display: none;
+  }
+}

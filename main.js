@@ -174,6 +174,7 @@ async function revealHome(library) {
   }));
   document.querySelectorAll(".is-loading").forEach((element) => element.classList.remove("is-loading"));
   paintDemos();
+  lockPhoneFrames();
 }
 
 syncThemeButton();
@@ -226,6 +227,24 @@ if (themeButton) {
 const aboutCopy = document.querySelector(".about-copy");
 const aboutWords = [];
 
+function lockBox(element) {
+  if (!onPhone() || !element || element.dataset.locked === "1" || element.hidden) return;
+  const height = Math.round(element.getBoundingClientRect().height);
+  if (height < 80) return;
+  element.style.height = `${height}px`;
+  element.style.minHeight = `${height}px`;
+  element.dataset.locked = "1";
+}
+
+function lockPhoneFrames() {
+  if (!onPhone()) return;
+  const hero = document.querySelector(".hero");
+  if (hero && (hero.classList.contains("is-overlay") || hero.classList.contains("is-solid"))) lockBox(hero);
+  const heroPhoto = document.querySelector(".hero-photo");
+  if (heroPhoto && !heroPhoto.hidden) lockBox(heroPhoto);
+  if (takeover && !takeover.classList.contains("is-still")) lockBox(takeover);
+}
+
 function paintHero(library) {
   const hero = document.querySelector(".hero");
   const title = document.querySelector(".hero h1");
@@ -245,6 +264,7 @@ function paintHero(library) {
   if (image) hero.style.setProperty("--hero-image", image);
   else hero.style.removeProperty("--hero-image");
   if (photo) photo.hidden = !solid;
+  lockPhoneFrames();
 }
 
 function paintAboutText(text) {
@@ -380,7 +400,7 @@ function stackRange() {
   if (!takeover || !takeoverPin) return null;
   const cards = takeover.querySelectorAll(".take-card").length;
   if (!cards || cards < 2) return null;
-  if (takeover.style.height) takeover.style.height = "";
+  if (takeover.style.height && takeover.dataset.locked !== "1") takeover.style.height = "";
   const stick = pinStick();
   const top = layoutTop(takeover);
   const travel = Math.max(0, takeover.offsetHeight - takeoverPin.offsetHeight);
@@ -393,6 +413,7 @@ function paintTakeover(scrollY) {
   if (!takeover || !takeoverPin || takeCards.length === 0) return;
   if (takeCards.length < 2) {
     if (takeover.style.height) takeover.style.height = "";
+    delete takeover.dataset.locked;
     takeover.classList.add("is-still");
     const takeIndex = takeover.querySelector(".take-index");
     if (takeIndex) takeIndex.hidden = true;
@@ -553,7 +574,7 @@ if (root) {
     }
     cancelGlide();
     if (native) {
-      heading = { element, offset: gap };
+      if (!onPhone()) heading = { element, offset: gap };
       window.scrollTo(0, top);
       return;
     }
@@ -666,11 +687,11 @@ if (root) {
     if (usesNativeScroll()) {
       if (onPhone()) syncNavSpace();
       if (glide) {
-        glide.to = Math.max(0, layoutTop(glide.element) - glide.offset);
+        if (!onPhone()) glide.to = Math.max(0, layoutTop(glide.element) - glide.offset);
         const t = Math.min(1, (performance.now() - glide.start) / glide.duration);
         window.scrollTo(0, glideY(glide.from, glide.to, t));
         if (t === 1) glide = null;
-      } else if (heading) {
+      } else if (heading && !onPhone()) {
         const top = Math.max(0, layoutTop(heading.element) - heading.offset);
         if (Math.abs(window.scrollY - top) > 1) window.scrollTo(0, top);
       }
@@ -777,6 +798,21 @@ if (saipan) {
   });
   tickClock();
   window.setInterval(tickClock, 1000);
+}
+
+const navToggle = document.querySelector(".nav-toggle");
+const nav = document.querySelector(".nav");
+if (navToggle && nav) {
+  navToggle.addEventListener("click", () => {
+    const open = nav.classList.toggle("is-open");
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  nav.querySelectorAll(".nav-links a").forEach((link) => {
+    link.addEventListener("click", () => {
+      nav.classList.remove("is-open");
+      navToggle.setAttribute("aria-expanded", "false");
+    });
+  });
 }
 
 document.querySelectorAll(".brand").forEach((brand) => {
