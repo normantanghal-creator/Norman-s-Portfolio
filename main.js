@@ -126,7 +126,7 @@ function paintTakeoverPhotos(library) {
   const section = document.querySelector(".takeover");
   if (section) section.style.setProperty("--take-steps", String(Math.max(1, photos.length - 1)));
   windowEl.replaceChildren();
-  photos.forEach((photo) => {
+  photos.forEach((photo, index) => {
     const article = document.createElement("article");
     article.className = "take-card";
     const copy = document.createElement("div");
@@ -140,7 +140,7 @@ function paintTakeoverPhotos(library) {
     frame.className = "take-photo";
     const img = document.createElement("img");
     img.alt = "";
-    img.loading = "eager";
+    img.loading = index === 0 ? "eager" : "lazy";
     img.decoding = "async";
     img.src = safeImage(photo.image);
     markPhoto(img);
@@ -148,6 +148,7 @@ function paintTakeoverPhotos(library) {
     article.append(copy, frame);
     windowEl.appendChild(article);
   });
+  forgetScrollMeasures();
 }
 
 function markPhoto(img) {
@@ -362,29 +363,34 @@ function hashId(href) {
 }
 
 let navMark = "";
+let navSnap = null;
 
-function paintNav(scrollY) {
-  const links = [...document.querySelectorAll(".nav-links a[href*='#']")];
-  if (!links.length) return;
-  const sections = links
-    .map((link) => {
+function navSections() {
+  if (navSnap) return navSnap;
+  const lead = onPhone() ? navHeight() + 16 : 120;
+  navSnap = {
+    lead,
+    items: [...document.querySelectorAll(".nav-links a[href*='#']")].flatMap((link) => {
       const id = hashId(link.getAttribute("href"));
       const element = id ? document.getElementById(id) : null;
-      return element ? { id, top: layoutTop(element) } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.top - b.top);
+      return element ? [{ id, link, top: layoutTop(element) }] : [];
+    }).sort((a, b) => a.top - b.top),
+  };
+  return navSnap;
+}
+
+function paintNav(scrollY) {
+  const snap = navSections();
+  if (!snap.items.length) return;
   let currentId = "";
-  const lead = onPhone() ? navHeight() + 16 : 120;
-  sections.forEach((section) => {
-    if (section.top - lead <= scrollY) currentId = section.id;
+  snap.items.forEach((section) => {
+    if (section.top - snap.lead <= scrollY) currentId = section.id;
   });
   if (currentId === navMark) return;
   navMark = currentId;
-  links.forEach((link) => {
-    const id = hashId(link.getAttribute("href"));
-    if (id && id === currentId) link.setAttribute("aria-current", "page");
-    else if (link.getAttribute("href").includes("#")) link.removeAttribute("aria-current");
+  snap.items.forEach((section) => {
+    if (section.id === currentId) section.link.setAttribute("aria-current", "page");
+    else section.link.removeAttribute("aria-current");
   });
 }
 
@@ -404,16 +410,38 @@ function holdMotion(progress, hold = 0.46) {
   return t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
 }
 
-function stackRange() {
+let takeSnap = null;
+
+function takeSnapshot() {
   if (!takeover || !takeoverPin) return null;
-  const cards = takeover.querySelectorAll(".take-card").length;
-  if (!cards || cards < 2) return null;
-  if (takeover.style.height && takeover.dataset.locked !== "1") takeover.style.height = "";
-  const stick = pinStick();
-  const top = layoutTop(takeover);
-  const travel = Math.max(0, takeover.offsetHeight - takeoverPin.offsetHeight);
-  if (travel < 40) return null;
-  return { start: top - stick, end: top - stick + travel };
+  const count = takeover.querySelectorAll(".take-card").length;
+  if (count < 2) return null;
+  if (takeSnap && takeSnap.count === count) return takeSnap;
+  const frame = takeover.querySelector(".takeover-window");
+  takeSnap = {
+    count,
+    stick: pinStick(),
+    top: layoutTop(takeover),
+    travel: Math.max(1, takeover.offsetHeight - takeoverPin.offsetHeight),
+    cover: frame ? frame.offsetHeight : takeoverPin.offsetHeight,
+  };
+  return takeSnap;
+}
+
+let aboutSnap = null;
+
+function stackRange() {
+  const snap = takeSnapshot();
+  if (!snap || snap.travel < 40) return null;
+  return { start: snap.top - snap.stick, end: snap.top - snap.stick + snap.travel };
+}
+
+function forgetScrollMeasures() {
+  takeSnap = null;
+  aboutSnap = null;
+  navSnap = null;
+  aboutMark = -1;
+  navMark = "";
 }
 
 function paintTakeover(scrollY) {
@@ -435,8 +463,11 @@ function paintTakeover(scrollY) {
     return;
   }
   takeover.classList.remove("is-still");
+  const snap = takeSnapshot();
+  if (!snap) return;
+  const local = scrollY - (snap.top - snap.stick);
+  if (local < -window.innerHeight || local > snap.travel) return;
   const phone = onPhone();
-  const frame = takeover.querySelector(".takeover-window");
   let takeIndex = takeover.querySelector(".take-index");
   if (!takeIndex) {
     takeIndex = document.createElement("div");
@@ -451,7 +482,7 @@ function paintTakeover(scrollY) {
     takeCards.forEach(() => takeIndex.appendChild(document.createElement("i")));
   }
   takeIndex.hidden = false;
-  const cover = frame ? frame.offsetHeight : takeoverPin.offsetHeight;
+  let cover = 0;
   const last = takeCards.length - 1;
   const paintCards = (progressFor) => {
     takeCards.forEach((card, index) => {
@@ -485,19 +516,20 @@ function paintTakeover(scrollY) {
       }
     });
   };
-  const range = stackRange();
-  const stick = pinStick();
-  if (!range) return;
-  const top = layoutTop(takeover);
-  const local = scrollY - (top - stick);
-  const travel = Math.max(1, takeover.offsetHeight - takeoverPin.offsetHeight);
+  const travel = snap.travel;
   const pinned = Math.min(travel, Math.max(0, local));
-  takeoverPin.style.transform = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
+  const pinShift = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
+  if (takeoverPin._shift !== pinShift) {
+    takeoverPin._shift = pinShift;
+    takeoverPin.style.transform = pinShift;
+  }
+  if (local > travel) return;
 
   const steps = Math.max(1, takeCards.length - 1);
   const dwell = phone ? travel / (steps + 1) : Math.min(window.innerHeight * 0.6, travel * 0.45);
   const motionTravel = Math.max(1, travel - dwell);
   const segment = motionTravel / steps;
+  cover = snap.cover;
   paintCards((index) => (
     index === 0 ? 1 : Math.min(1, Math.max(0, (local - (index - 1) * segment) / segment))
   ));
@@ -506,22 +538,33 @@ function paintTakeover(scrollY) {
 let aboutMark = -1;
 
 function paintAbout(scrollY) {
-  const aboutTrack = document.querySelector(".about-track");
-  const aboutPin = document.querySelector(".about-pin");
-  if (!aboutTrack || !aboutPin || aboutWords.length === 0) return;
-  const stick = pinStick();
-  const top = layoutTop(aboutTrack);
+  if (!aboutSnap) {
+    const aboutTrack = document.querySelector(".about-track");
+    const aboutPin = document.querySelector(".about-pin");
+    if (!aboutTrack || !aboutPin) return;
+    aboutSnap = {
+      aboutPin,
+      stick: pinStick(),
+      top: layoutTop(aboutTrack),
+      travel: Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight),
+    };
+  }
+  if (aboutWords.length === 0) return;
+  const { aboutPin, stick, top, travel } = aboutSnap;
   let span;
   if (onPhone()) {
-    aboutPin.style.transform = "";
+    if (aboutPin.style.transform) aboutPin.style.transform = "";
     const enter = top - window.innerHeight * 0.92;
     const arrive = top - stick - 12;
     span = Math.min(1, Math.max(0, (scrollY - enter) / Math.max(1, arrive - enter)));
   } else {
     const local = scrollY - (top - stick);
-    const travel = Math.max(1, aboutTrack.offsetHeight - aboutPin.offsetHeight);
     const pinned = Math.min(travel, Math.max(0, local));
-    aboutPin.style.transform = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
+    const shift = usesNativeScroll() ? "" : `translate3d(0, ${pinned}px, 0)`;
+    if (aboutPin._shift !== shift) {
+      aboutPin._shift = shift;
+      aboutPin.style.transform = shift;
+    }
     span = Math.min(1, Math.max(0, pinned / travel));
   }
 
@@ -689,6 +732,7 @@ if (root) {
 
   window.addEventListener("resize", () => {
     syncNativeClass();
+    forgetScrollMeasures();
     target = clamp(target);
   });
 

@@ -1624,6 +1624,11 @@ html[data-theme="dark"] .viewer {
   opacity: 0.35;
 }
 
+.cover {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
 .cover .demo img {
   position: relative;
   z-index: 1;
