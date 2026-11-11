@@ -330,8 +330,12 @@ function onMac() {
   return /Macintosh|Mac OS X/.test(navigator.userAgent);
 }
 
+function onBrave() {
+  return typeof navigator.brave !== "undefined";
+}
+
 function usesNativeScroll() {
-  return onPhone() || onMac();
+  return onPhone() || onMac() || onBrave();
 }
 
 function pinStick() {
@@ -357,6 +361,8 @@ function hashId(href) {
   return hash || "";
 }
 
+let navMark = "";
+
 function paintNav(scrollY) {
   const links = [...document.querySelectorAll(".nav-links a[href*='#']")];
   if (!links.length) return;
@@ -373,6 +379,8 @@ function paintNav(scrollY) {
   sections.forEach((section) => {
     if (section.top - lead <= scrollY) currentId = section.id;
   });
+  if (currentId === navMark) return;
+  navMark = currentId;
   links.forEach((link) => {
     const id = hashId(link.getAttribute("href"));
     if (id && id === currentId) link.setAttribute("aria-current", "page");
@@ -451,7 +459,11 @@ function paintTakeover(scrollY) {
       const progress = progressFor(index);
       const motion = index === 0 ? 1 : holdMotion(progress, 0);
       const offset = index === 0 ? 0 : (1 - motion) * cover;
-      card.style.transform = `translate3d(0, ${offset}px, 0)`;
+      const transform = `translate3d(0, ${offset}px, 0)`;
+      if (card._shift !== transform) {
+        card._shift = transform;
+        card.style.transform = transform;
+      }
       const next = index < last ? progressFor(index + 1) : 0;
       const nextMotion = index < last ? holdMotion(next, 0) : 0;
       let textOpacity = index === 0 ? 1 : motion < 0.4 ? 0 : Math.min(1, (motion - 0.4) / 0.45);
@@ -461,6 +473,8 @@ function paintTakeover(scrollY) {
         textOpacity *= fadeOut;
       }
       card.querySelectorAll("h3, p").forEach((line) => {
+        if (line._fade === textOpacity) return;
+        line._fade = textOpacity;
         line.style.opacity = String(textOpacity);
       });
       const presence = index === 0 ? 1 - nextMotion : motion * (index === last ? 1 : 1 - nextMotion);
@@ -489,6 +503,8 @@ function paintTakeover(scrollY) {
   ));
 }
 
+let aboutMark = -1;
+
 function paintAbout(scrollY) {
   const aboutTrack = document.querySelector(".about-track");
   const aboutPin = document.querySelector(".about-pin");
@@ -511,13 +527,15 @@ function paintAbout(scrollY) {
 
   const effect = Math.min(1, Math.max(0, (span - 0.14) / 0.72));
   const stepped = Math.min(aboutWords.length, Math.ceil((effect * aboutWords.length) / 5) * 5);
+  if (stepped === aboutMark) return;
+  aboutMark = stepped;
   aboutWords.forEach((word, index) => {
     word.classList.toggle("is-on", index < stepped);
   });
 }
 
 if (root) {
-  const syncNativeClass = () => document.documentElement.classList.toggle("is-native-scroll", onMac() && !onPhone());
+  const syncNativeClass = () => document.documentElement.classList.toggle("is-native-scroll", (onMac() || onBrave()) && !onPhone());
   syncNativeClass();
   let target = 0;
   let current = 0;
@@ -683,6 +701,8 @@ if (root) {
     history.replaceState(null, "", location.pathname + location.search);
   }
 
+  let paintedY = null;
+
   function frame() {
     if (usesNativeScroll()) {
       if (onPhone()) syncNavSpace();
@@ -695,11 +715,14 @@ if (root) {
         const top = Math.max(0, layoutTop(heading.element) - heading.offset);
         if (Math.abs(window.scrollY - top) > 1) window.scrollTo(0, top);
       }
-      root.style.transform = "none";
+      if (root.style.transform) root.style.transform = "none";
       const y = window.scrollY;
-      paintAbout(y);
-      paintTakeover(y);
-      paintNav(y);
+      if (y !== paintedY || glide || heading) {
+        paintedY = y;
+        paintAbout(y);
+        paintTakeover(y);
+        paintNav(y);
+      }
       requestAnimationFrame(frame);
       return;
     }
@@ -714,10 +737,14 @@ if (root) {
       current += (target - current) * 0.045;
       if (Math.abs(target - current) < 0.4) current = target;
     }
-    root.style.transform = `translate3d(0, ${-current}px, 0)`;
-    paintAbout(current);
-    paintTakeover(current);
-    paintNav(current);
+    const moved = Math.abs(current - paintedY) > 0.4 || glide || heading;
+    if (moved) {
+      paintedY = current;
+      root.style.transform = `translate3d(0, ${-current}px, 0)`;
+      paintAbout(current);
+      paintTakeover(current);
+      paintNav(current);
+    }
     requestAnimationFrame(frame);
   }
 

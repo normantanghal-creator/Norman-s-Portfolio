@@ -148,8 +148,8 @@ if (covers && catBox && density) {
 
   fetchLibrary().then((remote) => {
     if (remote) library = remote;
-    warmPhotos(homePhotoSources(library));
-    warmPhotos(library.photos);
+    if (onPhone()) warmPhotos(library.photos.slice(0, 4));
+    else warmPhotos(library.photos.slice(0, 8));
     renderCats();
     renderCovers();
   });

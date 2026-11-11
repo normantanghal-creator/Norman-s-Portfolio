@@ -107,14 +107,10 @@ function warmPhotos(list) {
       img.src = src;
       warmedPhotos.push(img);
     }
-    if (img.complete) return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+    if (img.complete) return Promise.resolve();
     return new Promise((resolve) => {
-      const finish = () => resolve();
-      img.addEventListener("load", () => {
-        if (img.decode) img.decode().then(finish, finish);
-        else finish();
-      }, { once: true });
-      img.addEventListener("error", finish, { once: true });
+      img.addEventListener("load", () => resolve(), { once: true });
+      img.addEventListener("error", () => resolve(), { once: true });
     });
   }));
 }
