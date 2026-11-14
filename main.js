@@ -88,7 +88,7 @@ function paintFeatured(library) {
     img.alt = "";
     img.loading = "eager";
     img.decoding = "async";
-    img.src = safeImage(photo.image);
+    img.src = gridImage(photo.image);
     markPhoto(img);
     demo.appendChild(img);
     frame.appendChild(demo);
@@ -142,7 +142,7 @@ function paintTakeoverPhotos(library) {
     img.alt = "";
     img.loading = index === 0 ? "eager" : "lazy";
     img.decoding = "async";
-    img.src = safeImage(photo.image);
+    img.src = gridImage(photo.image);
     markPhoto(img);
     frame.appendChild(img);
     article.append(copy, frame);
@@ -257,7 +257,8 @@ function paintHero(library) {
     lede.hidden = !library.heroText;
   }
   const photo = document.querySelector(".hero-photo");
-  const image = library.heroImage ? `url("${String(library.heroImage).replace(/["\\]/g, "")}")` : "";
+  const heroSrc = gridImage(library.heroImage);
+  const image = heroSrc ? `url("${heroSrc.replace(/["\\]/g, "")}")` : "";
   const solid = library.heroStyle === "solid" && image;
   hero.classList.toggle("is-overlay", Boolean(image) && !solid);
   hero.classList.toggle("is-solid", Boolean(solid));

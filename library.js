@@ -50,6 +50,13 @@ function safeImage(value) {
   return image;
 }
 
+function gridImage(value, width = 1400) {
+  const image = safeImage(value);
+  if (!image || image.startsWith("data:")) return image;
+  const size = width >= 2000 ? 2200 : 1400;
+  return `/api/preview?src=${encodeURIComponent(image)}&w=${size}`;
+}
+
 function cleanPhoto(photo, index) {
   if (!photo || typeof photo !== "object") return null;
   const seeded = seedLibrary.photos.find((item) => item.id === photo.id);
@@ -75,27 +82,28 @@ function homePhotoSources(library) {
   if (!library || !Array.isArray(library.photos)) return [];
   const sources = [];
   const add = (src) => {
-    const clean = safeImage(src);
+    const clean = String(src || "").startsWith("/api/preview?") ? String(src) : safeImage(src);
     if (clean && !sources.includes(clean)) sources.push(clean);
   };
-  add(library.heroImage);
+  add(gridImage(library.heroImage));
   library.photos
     .filter((photo) => photo.starred)
     .sort((a, b) => (a.starredAt || 0) - (b.starredAt || 0))
     .slice(0, 4)
-    .forEach((photo) => add(photo.image));
+    .forEach((photo) => add(gridImage(photo.image)));
   library.photos
     .filter((photo) => photo.scroll)
     .sort((a, b) => (a.scrollAt || 0) - (b.scrollAt || 0))
     .slice(0, 6)
-    .forEach((photo) => add(photo.image));
+    .forEach((photo) => add(gridImage(photo.image)));
   return sources;
 }
 
 function warmPhotos(list) {
   const sources = [];
   (Array.isArray(list) ? list : []).forEach((item) => {
-    const src = safeImage(typeof item === "string" ? item : item && item.image);
+    const raw = typeof item === "string" ? item : item && item.image;
+    const src = String(raw || "").startsWith("/api/preview?") ? String(raw) : safeImage(raw);
     if (src && !sources.includes(src)) sources.push(src);
   });
   return Promise.all(sources.map((src) => {

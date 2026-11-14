@@ -60,9 +60,9 @@ if (covers && catBox && density) {
         if (src) {
           const img = document.createElement("img");
           img.alt = "";
-          img.loading = "eager";
+          img.loading = "lazy";
           img.decoding = "async";
-          img.src = src;
+          img.src = gridImage(src);
           frame.appendChild(img);
         }
         const meta = document.createElement("div");
@@ -110,7 +110,7 @@ if (covers && catBox && density) {
         img.style.width = `${Math.round(img.naturalWidth * scale)}px`;
         img.style.height = `${Math.round(img.naturalHeight * scale)}px`;
       });
-      img.src = src;
+      img.src = gridImage(src, 2200);
       viewerPhoto.appendChild(img);
     }
     viewerTitle.textContent = photo.title;
@@ -148,8 +148,8 @@ if (covers && catBox && density) {
 
   fetchLibrary().then((remote) => {
     if (remote) library = remote;
-    if (onPhone()) warmPhotos(library.photos.slice(0, 4));
-    else warmPhotos(library.photos.slice(0, 8));
+    const first = library.photos.slice(0, 6).map((photo) => gridImage(photo.image)).filter(Boolean);
+    warmPhotos(first);
     renderCats();
     renderCovers();
   });
